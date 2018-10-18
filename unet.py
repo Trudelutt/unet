@@ -8,11 +8,11 @@ from keras.layers import *
 from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as keras
-from dice_coefficient_loss import weighted_dice_coefficient_loss
+from dice_coefficient_loss import dice_coefficient
 
 
 
-def unet(pretrained_weights = None,input_size = (320,320,1)):
+def unet(pretrained_weights = None,input_size = (320,320, 1)):
     inputs = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
@@ -52,11 +52,11 @@ def unet(pretrained_weights = None,input_size = (320,320,1)):
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(up9)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
     conv9 = Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv10 = Conv2D(1, 1, activation = 'sigmoid')(conv9)
+    conv10 = Conv2D(2, 1, activation = 'sigmoid')(conv9)
 
     model = Model(input = inputs, output = conv10)
 
-    model.compile(optimizer = Adam(lr = 1e-4), loss = weighted_dice_coefficient_loss, metrics = ['accuracy'])
+    model.compile(optimizer = Adam(lr = 1e-4), loss = dice_coefficient, metrics = ['accuracy'])
     model.summary()
     if(pretrained_weights):
     	model.load_weights(pretrained_weights)

@@ -14,7 +14,7 @@ def dice_coefficient_loss(y_true, y_pred):
     return -dice_coefficient(y_true, y_pred)
 
 
-def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001):
+def weighted_dice_coefficient(y_true, y_pred, axis=(-1, -2, -3), smooth=0.00001):
     """
     Weighted dice coefficient. Default axis assumes a "channels first" data structure
     :param smooth:

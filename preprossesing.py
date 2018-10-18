@@ -75,8 +75,11 @@ def get_train_and_label_numpy(number_of_slices, train_list, label_list):
         #print(i)
         for j in range(len(train_list)):
             for k in range(train_list[j].shape[0]):
-                train_data[i] = train_list[j][k]
-                label_data[i] = label_list[j][k]
+                train_data[0] = train_list[0][40]
+                label_data[0] = label_list[0][40]
+                break
+            break
+        break
                 #print(train_data[i])
     return train_data, label_data
 
@@ -97,7 +100,7 @@ def get_training_data():
     #print(len(labeldata))
     #print("Traindata")
     #print(labeldata[20])
-    train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
+    train_data, label_data = get_train_and_label_numpy(1, traindata, labeldata)
 
     #print(train_data.shape)
     """plt.figure()
@@ -107,6 +110,6 @@ def get_training_data():
     plt.imshow(train_data[1350])
     plt.show()
     print(count_slices)"""
-    return train_data, label_data
+    return train_data.astype('float32')/255, label_data
 
 get_training_data()
