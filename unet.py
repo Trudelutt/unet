@@ -8,7 +8,8 @@ from keras.layers import *
 from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as keras
-from dice_coefficient_loss import dice_coefficient
+from dice_coefficient_loss import dice_coef, dice_loss, weighted_dice_loss
+from jaccard_coef_loss import jaccard_distance_loss
 
 
 
@@ -25,14 +26,14 @@ def unet(pretrained_weights = None,input_size = (320,320, 1)):
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
-    drop4 = Dropout(0.5)(conv4)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+    #drop4 = Dropout(0.5)(conv4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 
     conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
     conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
-    drop5 = Dropout(0.5)(conv5)
+    #drop5 = Dropout(0.5)(conv5)
 
-    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop5))
+    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv5))
     #merge6 = merge([drop4,up6], mode = 'concat', concat_axis = 3)
     conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(up6)
     conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
@@ -51,12 +52,12 @@ def unet(pretrained_weights = None,input_size = (320,320, 1)):
     #merge9 = merge([conv1,up9], mode = 'concat', concat_axis = 3)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(up9)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv9 = Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv10 = Conv2D(2, 1, activation = 'sigmoid')(conv9)
+    conv9 = Conv2D(2, 3, activation = 'relu', padding = 'same')(conv9)
+    conv10 = Conv2D(2, 1, activation = 'softmax')(conv9)
 
     model = Model(input = inputs, output = conv10)
 
-    model.compile(optimizer = Adam(lr = 1e-4), loss = dice_coefficient, metrics = ['accuracy'])
+    model.compile(optimizer = 'adam', loss = dice_loss, metrics=[dice_coef])
     model.summary()
     if(pretrained_weights):
     	model.load_weights(pretrained_weights)
