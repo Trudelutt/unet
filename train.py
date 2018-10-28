@@ -6,7 +6,7 @@ from keras.utils import to_categorical
 
 model = unet()
 train, label = get_training_data()
-one_hot_label = to_categorical(label, num_classes=2, dtype='float32')
+#one_hot_label = to_categorical(label, num_classes=2, dtype=np.bool)
 
 #x_train    = train[:100]
 #x_validate = train[100: ]
@@ -33,20 +33,23 @@ def visulize_predic(p):
                 new_p[i][j] = 1
     return new_p
 
-print(train.shape)
+
 new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
-model.fit(x=new_x_train, y= one_hot_label, batch_size=1, epochs=1, verbose=1)
+y_label = label.reshape(label.shape[0], label.shape[1], label.shape[2], 1)
+print(new_x_train)
+print(y_label)
+model.fit(x=new_x_train, y= y_label, batch_size=1, epochs=80, verbose=1)
 
 #train1 = new_x_train[60].reshape()
 p = model.predict(new_x_train)
 print("Predictions")
 #print(p)
-#print(p)
+print(p)
 print(p.shape)
-new_p = visulize_predic(p[0])
-#new_p = p.reshape(p.shape[0], p.shape[1],p.shape[2])
+#new_p = visulize_predic(p[0])
+new_p = p[0]
 plt.figure()
-plt.imshow(new_p)
+plt.imshow(new_p[...,0])
 plt.figure()
 plt.imshow(train[0])
 plt.figure()

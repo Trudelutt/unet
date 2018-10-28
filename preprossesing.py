@@ -58,21 +58,20 @@ def fetch_training_data_files():
         data = json.load(f)
         for i in range(len(data["training"])):
             subject_files = list()
-            subject_files.append(os.path.join(path.replace("/unet",""),data["training"][i]["image"].replace("./", "").replace(".gz", "")))
-            subject_files.append(os.path.join( path.replace("/unet",""),data["training"][i]["label"].replace("./", "").replace(".gz", "")))
+            subject_files.append(os.path.join(path.replace("/unet",""),data["training"][i]["image"].replace("./", "")))
+            subject_files.append(os.path.join( path.replace("/unet",""),data["training"][i]["label"].replace("./", "")))
             training_data_files.append(tuple(subject_files))
     return training_data_files
 
 def get_preprossed_numpy_arrays_from_file(image_path, label_path):
     sitk_image = sitk_t1 = sitk.ReadImage(image_path)
     sitk_label = sitk_t1 = sitk.ReadImage(label_path)
-    return scope_training_data(sitk.GetArrayFromImage(sitk_image)/250, sitk.GetArrayFromImage(sitk_label))
+    return scope_training_data(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label))
 
 def get_train_and_label_numpy(number_of_slices, train_list, label_list):
-    train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2]), dtype= float)
-    label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]), dtype= float)
+    train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2]))
+    label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]))
     for i in range(number_of_slices):
-        #print(i)
         for j in range(len(train_list)):
             for k in range(train_list[j].shape[0]):
                 train_data[0] = train_list[0][40]
@@ -81,6 +80,10 @@ def get_train_and_label_numpy(number_of_slices, train_list, label_list):
             break
         break
                 #print(train_data[i])
+    mean = np.mean(train_data)
+    std = np.std(train_data)
+    #train_data -= mean
+    #train_data /= std
     return train_data, label_data
 
 
@@ -110,6 +113,6 @@ def get_training_data():
     plt.imshow(train_data[1350])
     plt.show()
     print(count_slices)"""
-    return train_data.astype('float32')/255, label_data
+    return train_data, label_data
 
 get_training_data()
