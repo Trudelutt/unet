@@ -1,8 +1,16 @@
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
+import cv2
+import scipy.misc
 from unet import unet
 from preprossesing import get_training_data
-from keras.utils import to_categorical
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.2
+set_session(tf.Session(config = config))
 
 model = unet()
 train, label = get_training_data()
@@ -22,6 +30,14 @@ train, label = get_training_data()
 #new_y_train= y_train.reshape(y_train.shape[0],y_train.shape[1], y_train.shape[2], 2).astype('float32')
 #new_x_validate = x_validate.reshape(x_validate.shape[0],x_validate.shape[1], x_validate.shape[2], 2).astype('float32')
 #print("HER")
+
+def write_png(path, array):
+    print(array.shape)
+    new_array = array.reshape(320,320)
+    scipy.misc.imsave(path, new_array)
+
+#def read_png_and_visualize(path):
+
 def visulize_predic(p):
     #p[argmax(p[....,0], p[....,1]) == p[....,0]] = 0
     new_p = np.zeros((p.shape[0], p.shape[1]))
@@ -38,7 +54,7 @@ new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
 y_label = label.reshape(label.shape[0], label.shape[1], label.shape[2], 1)
 print(new_x_train)
 print(y_label)
-model.fit(x=new_x_train, y= y_label, batch_size=1, epochs=80, verbose=1)
+model.fit(x=new_x_train, y= y_label, batch_size=1, epochs=50, verbose=1)
 
 #train1 = new_x_train[60].reshape()
 p = model.predict(new_x_train)
@@ -47,8 +63,11 @@ print("Predictions")
 print(p)
 print(p.shape)
 #new_p = visulize_predic(p[0])
+#print(p[0].type())
 new_p = p[0]
-plt.figure()
+#new_p = new_p.reshape((320,320))
+write_png("prediction.png", new_p)
+"""plt.figure()
 plt.imshow(new_p[...,0])
 plt.figure()
 plt.imshow(train[0])
@@ -57,4 +76,4 @@ plt.figure()
 plt.imshow(label[0])
 
 #print(y_validate[0].shape)
-plt.show()
+plt.show()"""

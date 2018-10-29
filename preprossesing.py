@@ -86,6 +86,19 @@ def get_train_and_label_numpy(number_of_slices, train_list, label_list):
     #train_data /= std
     return train_data, label_data
 
+def write_numpyimage_to_file(numpy_image, path):
+    image = sitk.GetImageFromArray(numpy_image)
+    sitk.WriteImage(path)
+
+def read_numpyarray_from_file(path):
+    image = sitk.ReadImage(path)
+    return sitk.GetArrayFromImage(image)
+
+def show_nii_image(path, slice_nr):
+    image = read_numpyarray_from_file(path)
+    plt.figure()
+    plt.imshow(image[slice_nr])
+
 
 # Assume to have some sitk image (itk_image) and label (itk_label)
 def get_training_data():
