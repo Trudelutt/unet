@@ -1,45 +1,25 @@
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
-import cv2
 import scipy.misc
+from keras.utils import to_categorical
+from keras.callbacks import ModelCheckpoint, EarlyStopping, TerminateOnNaN
 from unet import unet
 from preprossesing import get_training_data
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.2
-set_session(tf.Session(config = config))
 
-model = unet()
-train, label = get_training_data()
-#one_hot_label = to_categorical(label, num_classes=2, dtype=np.bool)
-
-#x_train    = train[:100]
-#x_validate = train[100: ]
-#y_train    = label[:100]
-#y_validate = label[100: ]
-
-#y_train_one_hot = to_categorical(y_train, num_classes=2, dtype='float32')
-#y_validate_one_hot = to_categorical(y_validate, num_classes=2, dtype='float32')
-#print(x_train.shape)
-#print(x_validate.shape)
-#print(model.input_size)
-#new_x_train = x_train.reshape(x_train.shape[0],x_train.shape[1], x_train.shape[2], 2).astype('float32')
-#new_y_train= y_train.reshape(y_train.shape[0],y_train.shape[1], y_train.shape[2], 2).astype('float32')
-#new_x_validate = x_validate.reshape(x_validate.shape[0],x_validate.shape[1], x_validate.shape[2], 2).astype('float32')
-#print("HER")
+def gpu_config():
+    config = tf.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 0.2
+    set_session(tf.Session(config = config))
 
 def write_png(path, array):
-    print(array.shape)
-    new_array = array.reshape(320,320)
+    new_array = array.reshape(512,512)
     scipy.misc.imsave(path, new_array)
 
-#def read_png_and_visualize(path):
-
 def visulize_predic(p):
-    #p[argmax(p[....,0], p[....,1]) == p[....,0]] = 0
     new_p = np.zeros((p.shape[0], p.shape[1]))
     print("NEW P")
     print(new_p.shape)
@@ -49,31 +29,37 @@ def visulize_predic(p):
                 new_p[i][j] = 1
     return new_p
 
+def train_model(model, input, label):
+    print("Training sample" + str(new_x_train.shape))
+    model_checkpoint = ModelCheckpoint('unet_vessels.hdf5', monitor='loss',verbose=1, save_best_only=True)
+    model_earlyStopp = EarlyStopping(monitor='loss', min_delta=0, patience=0, verbose=1, mode='min', baseline=None, restore_best_weights=False)
+    model.fit(x=input, y= label, batch_size=1, epochs=70, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
+
+def predict_model(model, input):
+    print("Starting predictions")
+    p = model.predict(input)
+    print("Writing predictions to file...")
+    write_png("./predictions/org20.png", new_x_train[20])
+
+    #write_png("./predictions/background.png", p[0][...,0])
+    write_png("./predictions/prediction20.png", p[0][...,1])
+    write_png("./predictions/predictiontumor5.png", p[0][...,2])
+
+    #write_png("./predictions/backgroundgt.png", one_hot_label[0][...,0])
+    #write_png("./predictions/gt.png", one_hot_label[0][...,0])
+    #write_png("./predictions/tumorgt.png", one_hot_label[0][...,1])
+
+
+
+gpu_config()
+model = unet()
+train, label = get_training_data()
+one_hot_label = to_categorical(label, num_classes=3)
+
 
 new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
-y_label = label.reshape(label.shape[0], label.shape[1], label.shape[2], 1)
-print(new_x_train)
-print(y_label)
-model.fit(x=new_x_train, y= y_label, batch_size=1, epochs=50, verbose=1)
+print("Training sample" + str(new_x_train.shape))
+train_model(model, new_x_train, one_hot_label)
 
-#train1 = new_x_train[60].reshape()
-p = model.predict(new_x_train)
-print("Predictions")
-#print(p)
-print(p)
-print(p.shape)
-#new_p = visulize_predic(p[0])
-#print(p[0].type())
-new_p = p[0]
-#new_p = new_p.reshape((320,320))
-write_png("prediction.png", new_p)
-"""plt.figure()
-plt.imshow(new_p[...,0])
-plt.figure()
-plt.imshow(train[0])
-plt.figure()
-#print(train[0])
-plt.imshow(label[0])
-
-#print(y_validate[0].shape)
-plt.show()"""
+one_sample = new_x_train[20:21]
+predict_model(model, one_sample)

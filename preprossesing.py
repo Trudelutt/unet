@@ -43,6 +43,9 @@ def resample_img(itk_image, out_spacing=[2.0, 2.0, 2.0], is_label=False):
 def scope_training_data(image, label):
     first_non_backgroud_slice = float('inf')
     last_non_backgroud_slice = -1
+    # Normalizw images
+    image -= np.min(image)
+    image /= np.max(image)
     for i in range(image.shape[0]):
         if(1 in label[i]):
             if(i < first_non_backgroud_slice):
@@ -52,38 +55,39 @@ def scope_training_data(image, label):
 
 def fetch_training_data_files():
     training_data_files = list()
-    path = os.path.join(os.path.dirname(__file__), "Task02_Heart")
+    path = os.path.join(os.path.dirname(__file__), "Task08_HepaticVessel")
     count = 0
-    with open("../Task02_Heart/dataset.json", "r+", encoding="utf-8") as f:
+    with open("../Task08_HepaticVessel/dataset.json", "r+", encoding="utf-8") as f:
         data = json.load(f)
         for i in range(len(data["training"])):
             subject_files = list()
             subject_files.append(os.path.join(path.replace("/unet",""),data["training"][i]["image"].replace("./", "")))
             subject_files.append(os.path.join( path.replace("/unet",""),data["training"][i]["label"].replace("./", "")))
             training_data_files.append(tuple(subject_files))
+            break
     return training_data_files
 
 def get_preprossed_numpy_arrays_from_file(image_path, label_path):
-    sitk_image = sitk_t1 = sitk.ReadImage(image_path)
-    sitk_label = sitk_t1 = sitk.ReadImage(label_path)
+    sitk_image  = sitk.ReadImage(image_path)
+    sitk_label  = sitk.ReadImage(label_path)
+    print(image_path)
     return scope_training_data(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label))
 
+#TODO fiks so indexes
 def get_train_and_label_numpy(number_of_slices, train_list, label_list):
     train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2]))
     label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]))
+    index = 0
     for i in range(number_of_slices):
         for j in range(len(train_list)):
             for k in range(train_list[j].shape[0]):
-                train_data[0] = train_list[0][40]
-                label_data[0] = label_list[0][40]
-                break
-            break
+                print(str(index+1) +"/" + str(number_of_slices))
+                print("slices of image " + str(k+1) +"/" + str(train_list[j].shape[0]))
+                print(train_list[j][k])
+                train_data[index] = train_list[j][k]
+                label_data[index] = label_list[j][k]
+                index += 1
         break
-                #print(train_data[i])
-    mean = np.mean(train_data)
-    std = np.std(train_data)
-    #train_data -= mean
-    #train_data /= std
     return train_data, label_data
 
 def write_numpyimage_to_file(numpy_image, path):
@@ -107,25 +111,11 @@ def get_training_data():
     count_slices = 0
     files = fetch_training_data_files()
     for element in files:
-    #array_label = sitk.GetArrayFromImage(itk_label)
         i, l = get_preprossed_numpy_arrays_from_file(element[0], element[1])
         count_slices += i.shape[0]
         traindata.append(i)
         labeldata.append(l)
-    #print(labeldata[19])
-    #print(len(labeldata))
-    #print("Traindata")
-    #print(labeldata[20])
-    train_data, label_data = get_train_and_label_numpy(1, traindata, labeldata)
+    train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
-    #print(train_data.shape)
-    """plt.figure()
-    plt.imshow(label_data[1350])
-    #print(i)
-    plt.figure()
-    plt.imshow(train_data[1350])
-    plt.show()
-    print(count_slices)"""
+    print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     return train_data, label_data
-
-get_training_data()
