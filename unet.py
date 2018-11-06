@@ -21,22 +21,22 @@ def unet(pretrained_weights = None,input_size = (320,320, 1)):
     c1 = Conv2D(64, (3, 3), activation='relu', padding='same') (inputs)
    # c1 = Dropout(0.1) (c1)
     c1 = Conv2D(64, (3, 3), activation='relu', padding='same') (c1)
-    p1 = MaxPooling2D((2, 2)) (c1)
+    p1 = MaxPooling2D((2, 2), strides=(2,2)) (c1)
 
     c2 = Conv2D(128, (3, 3), activation='relu', padding='same') (p1)
     #c2 = Dropout(0.1) (c2)
     c2 = Conv2D(128, (3, 3), activation='relu', padding='same') (c2)
-    p2 = MaxPooling2D((2, 2)) (c2)
+    p2 = MaxPooling2D((2, 2), strides = (2,2)) (c2)
 
     c3 = Conv2D(256, (3, 3), activation='relu', padding='same') (p2)
     #c3 = Dropout(0.2) (c3)
     c3 = Conv2D(256, (3, 3), activation='relu', padding='same') (c3)
-    p3 = MaxPooling2D((2, 2)) (c3)
+    p3 = MaxPooling2D((2, 2), strides=(2,2)) (c3)
 
     c4 = Conv2D(512, (3, 3), activation='relu', padding='same') (p3)
     #c4 = Dropout(0.2) (c4)
     c4 = Conv2D(512, (3, 3), activation='relu',  padding='same') (c4)
-    p4 = MaxPooling2D(pool_size=(2, 2)) (c4)
+    p4 = MaxPooling2D(pool_size=(2, 2), strides=(2,2)) (c4)
 
     c5 = Conv2D(1024, (3, 3), activation='relu', padding='same') (p4)
     #c5 = Dropout(0.3) (c5)
@@ -66,7 +66,7 @@ def unet(pretrained_weights = None,input_size = (320,320, 1)):
     #c9 = Dropout(0.1) (c9)
     c9 = Conv2D(64, (3, 3), activation='relu', padding='same') (c9)
 
-    outputs = Conv2D(3, (1, 1), activation='sigmoid') (c9)
+    outputs = Conv2D(3, (1, 1), activation='softmax') (c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
     model.compile(optimizer=SGD(lr=10e-3), loss='mse', metrics=[mean_iou])
