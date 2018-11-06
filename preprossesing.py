@@ -82,8 +82,8 @@ def get_train_and_label_numpy(number_of_slices, train_list, label_list):
         for j in range(len(train_list)):
             for k in range(train_list[j].shape[0]):
                 print(str(index+1) +"/" + str(number_of_slices))
-                print("slices of image " + str(k+1) +"/" + str(train_list[j].shape[0]))
-                print(train_list[j][k])
+                #print("slices of image " + str(k+1) +"/" + str(train_list[j].shape[0]))
+                #print(train_list[j][k])
                 train_data[index] = train_list[j][k]
                 label_data[index] = label_list[j][k]
                 index += 1
