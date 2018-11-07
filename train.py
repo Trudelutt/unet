@@ -31,16 +31,21 @@ def visulize_predic(p):
                 new_p[i][j] = 1
     return new_p
 
-def train_model(model, input, label):
-    print("Training sample" + str(new_x_train.shape))
+def train_model(model, input, target):
+    print("Inside training")
+    print("Training sample" + str(input.shape))
+   # print("label sample" + str(target))
+
     model_checkpoint = ModelCheckpoint('unet_vessels.hdf5', monitor='loss',verbose=1, save_best_only=True)
     model_earlyStopp = EarlyStopping(monitor='loss', min_delta=0, patience=0, verbose=1, mode='min', baseline=None, restore_best_weights=False)
-    model.fit(x=input, y= label, batch_size=1, epochs=70, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
+    model.fit(x=input, y= target, batch_size=1, epochs=100, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
 
 def predict_model(model, input, target):
     print("Starting predictions")
     p = model.predict(input)
-    show_predictions(p, target)
+    print("prediction: " + str(p))
+    write_predictions_to_file(p, target)
+    #show_predictions(p, target)
 
 
 def show_predictions(prediction_array, mask_array):
@@ -57,23 +62,24 @@ def show_predictions(prediction_array, mask_array):
     plt.imshow(mask_array[0][...,1], cmap='gray')
     plt.show()
 
-def write_predictions_to_file():
+def write_predictions_to_file(p, target):
     print("Writing predictions to file...")
-    write_png("./predictions/org20.png", new_x_train[20])
+    write_png("./predictions/gt20.png", target[0][...,0])
 
     #write_png("./predictions/background.png", p[0][...,0])
-    write_png("./predictions/prediction20.png", p[0][...,1])
-    write_png("./predictions/predictiontumor5.png", p[0][...,2])
+    write_png("./predictions/prediction20.png", p[0][...,0])
+    #write_png("./predictions/predictiontumor5.png", p[0][...,2])
 
-gpu_config()
-model = unet()
-train, label = get_training_data()
-one_hot_label = to_categorical(label, num_classes=3)
+if __name__ == "__main__":
+    gpu_config()
+    model = unet()
+    train, label = get_training_data()
+    one_hot_label = to_categorical(label, num_classes=3)[...,1:-1]
 
 
-new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
-print("Training sample" + str(new_x_train.shape))
-#train_model(model, new_x_train, one_hot_label)
-pre_train_model = load_model("unet_vessels.hdf5", custom_objects={'mean_iou': mean_iou})
-one_sample = new_x_train[20:21]
-predict_model(pre_train_model, one_sample, one_hot_label[20:21])
+    new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
+    print("Training sample" + str(new_x_train.shape))
+    train_model(model, new_x_train[20:21], one_hot_label[20:21])
+    #pre_train_model = load_model("unet_vessels.hdf5", custom_objects={'mean_iou': mean_iou})
+    one_sample = new_x_train[20:21]
+    predict_model(model, one_sample, one_hot_label[20:21])
