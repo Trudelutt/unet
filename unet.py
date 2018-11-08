@@ -108,7 +108,7 @@ def unet(pretrained_weights = None,input_size = (256,256, 5)):
     #c9 = BatchNormalization()(c9)
     c9 = Activation('relu')(c9)
 
-    outputs = Conv2D(1, (1, 1), activation='softmax') (c9)
+    outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
     model.compile(optimizer=SGD(lr=10e-3), loss=dice_coefficient_loss, metrics=[mean_iou])

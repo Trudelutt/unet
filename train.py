@@ -81,7 +81,7 @@ if __name__ == "__main__":
     train, label = get_training_data()
 
     one_hot_label = to_categorical(label, num_classes=3)[...,1:-1]
-
+    #show_predictions(train[20], one_hot_label[20])
     #new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
     print("Training sample" + str(train.shape))
     train_model(model, train[20:21], one_hot_label[20:21])

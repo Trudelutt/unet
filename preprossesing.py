@@ -46,8 +46,9 @@ def scope_training_data(image, label):
     # Normalizw images
     image -= np.min(image)
     image /= np.max(image)
-    #image -= np.mean(image)
-    #image /= np.std(image)
+    image -= np.mean(image)
+    image /= np.std(image)
+    #image = np.clip(image, 0,1)
     for i in range(image.shape[0]):
         if(1 in label[i]):
             if(i < first_non_backgroud_slice):
