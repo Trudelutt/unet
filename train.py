@@ -14,12 +14,17 @@ from metric import mean_iou
 
 def gpu_config():
     config = tf.ConfigProto()
+    config.gpu_options.allow_growth=True
     config.gpu_options.per_process_gpu_memory_fraction = 0.2
-    set_session(tf.Session(config = config))
+    #set_session(tf.Session(config = config))
+    sess = tf.Session(config=config)
+    sess.run(tf.global_variables_initializer())
+
+
 
 def write_png(path, array):
-    new_array = array.reshape(512,512)
-    scipy.misc.imsave(path, new_array)
+    #new_array = array.reshape(512,256)
+    scipy.misc.imsave(path, array)
 
 def visulize_predic(p):
     new_p = np.zeros((p.shape[0], p.shape[1]))
@@ -51,15 +56,15 @@ def predict_model(model, input, target):
 def show_predictions(prediction_array, mask_array):
     plt.figure()
     print(prediction_array.shape)
-    plt.imshow(prediction_array[0][...,0], cmap='gray')
-    plt.figure()
+    plt.imshow(prediction_array[...,2], cmap='gray')
+    """plt.figure()
     plt.imshow(prediction_array[0], cmap='gray')
     plt.figure()
     plt.imshow(prediction_array[0][...,1], cmap='gray')
     plt.figure()
-    plt.imshow(prediction_array[0][...,2], cmap='gray')
+    plt.imshow(prediction_array[0][...,2], cmap='gray')"""
     plt.figure()
-    plt.imshow(mask_array[0][...,1], cmap='gray')
+    plt.imshow(mask_array[...,0], cmap='gray')
     plt.show()
 
 def write_predictions_to_file(p, target):
@@ -74,12 +79,12 @@ if __name__ == "__main__":
     gpu_config()
     model = unet()
     train, label = get_training_data()
+
     one_hot_label = to_categorical(label, num_classes=3)[...,1:-1]
 
-
-    new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
-    print("Training sample" + str(new_x_train.shape))
-    train_model(model, new_x_train[20:21], one_hot_label[20:21])
+    #new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
+    print("Training sample" + str(train.shape))
+    train_model(model, train[20:21], one_hot_label[20:21])
     #pre_train_model = load_model("unet_vessels.hdf5", custom_objects={'mean_iou': mean_iou})
-    one_sample = new_x_train[20:21]
+    one_sample = train[20:21]
     predict_model(model, one_sample, one_hot_label[20:21])

@@ -46,12 +46,49 @@ def scope_training_data(image, label):
     # Normalizw images
     image -= np.min(image)
     image /= np.max(image)
+    #image -= np.mean(image)
+    #image /= np.std(image)
     for i in range(image.shape[0]):
         if(1 in label[i]):
             if(i < first_non_backgroud_slice):
                 first_non_backgroud_slice = i
             last_non_backgroud_slice = i
-    return image[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128, 156:-100], label[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128,156:-100]
+
+    resize_label =  label[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128,156:-100]
+    resize_image =  image[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128,156:-100]
+
+    image_with_channels = np.zeros((resize_image.shape[0], 256, 256, 5))
+    for i in range(resize_image.shape[0]):
+        if(i-2 >= 0):
+            image_with_channels[i][...,0] = resize_image[i-2]
+        else:
+            image_with_channels[i][...,0] = image[first_non_backgroud_slice-1:first_non_backgroud_slice,128:-128,156:-100]
+        if(i-1>= 0):
+            image_with_channels[i][...,1] = resize_image[i-1]
+        else:
+            image_with_channels[i][...,1] = image[first_non_backgroud_slice-2:first_non_backgroud_slice - 1,128:-128,156:-100]
+        image_with_channels[i][...,2] = resize_image[i]
+        if(i+1 < resize_image.shape[0]):
+            image_with_channels[i][...,3] = resize_image[i+1]
+        else:
+            image_with_channels[i][...,3] = image[last_non_backgroud_slice + 1:last_non_backgroud_slice +2,128:-128,156:-100]
+        if(i+2 < resize_image.shape[0]):
+            image_with_channels[i][...,4] = resize_image[i+2]
+        else:
+            image_with_channels[i][...,4] = image[last_non_backgroud_slice + 2:last_non_backgroud_slice +3,128:-128,156:-100]
+    #TODO check if channels becomes right for training 0. 1. and the last ones
+    """if np.array_equal(image_with_channels[20][...,0],resize_image[18]):
+        print("HURRA channel 0 er riktig")
+    if np.array_equal(image_with_channels[20][...,1], resize_image[19]):
+        print("HURRA channel 1 er riktig")
+    if np.array_equal(image_with_channels[20][...,2], resize_image[20]):
+        print("HURRA channel 2 er riktig")
+    if np.array_equal(image_with_channels[20][...,3], resize_image[21]):
+        print("HURRA channel 3 er riktig")
+    if np.array_equal(image_with_channels[20][...,4], resize_image[22]):
+        print("HURRA channel 4 er riktig")"""
+
+    return image_with_channels, resize_label
 
 def fetch_training_data_files():
     training_data_files = list()
@@ -75,7 +112,7 @@ def get_preprossed_numpy_arrays_from_file(image_path, label_path):
 
 #TODO fiks so indexes
 def get_train_and_label_numpy(number_of_slices, train_list, label_list):
-    train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2]))
+    train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2], 5))
     label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]))
     index = 0
     for i in range(number_of_slices):
@@ -119,3 +156,7 @@ def get_training_data():
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     return train_data, label_data
+
+if __name__ == "__main__":
+    train, label = get_training_data()
+    print(train[0])

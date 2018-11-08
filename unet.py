@@ -11,9 +11,9 @@ from metric import mean_iou
 
 
 
-def unet(pretrained_weights = None,input_size = (320,320, 1)):
+def unet(pretrained_weights = None,input_size = (256,256, 5)):
     # Build U-Net model
-    inputs = Input((512, 512, 1))
+    inputs = Input((input_size))
    # s = Lambda(lambda x: x / 255) (inputs)
 
     c1 = Conv2D(64, (3, 3), padding='same') (inputs)
@@ -105,10 +105,10 @@ def unet(pretrained_weights = None,input_size = (320,320, 1)):
     #c9 = Conv2D(64, (3, 3), activation='relu', padding='same') (u9)
     #c9 = Dropout(0.1) (c9)
     c9 = Conv2D(64, (3, 3), padding='same') (c9)
-    c9 = BatchNormalization()(c9)
+    #c9 = BatchNormalization()(c9)
     c9 = Activation('relu')(c9)
 
-    outputs = Conv2D(3, (1, 1), activation='softmax') (c9)
+    outputs = Conv2D(1, (1, 1), activation='softmax') (c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
     model.compile(optimizer=SGD(lr=10e-3), loss=dice_coefficient_loss, metrics=[mean_iou])
