@@ -51,7 +51,7 @@ def scope_training_data(image, label):
             if(i < first_non_backgroud_slice):
                 first_non_backgroud_slice = i
             last_non_backgroud_slice = i
-    return image[first_non_backgroud_slice:last_non_backgroud_slice+1], label[first_non_backgroud_slice:last_non_backgroud_slice+1]
+    return image[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128, 156:-100], label[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128,156:-100]
 
 def fetch_training_data_files():
     training_data_files = list()
