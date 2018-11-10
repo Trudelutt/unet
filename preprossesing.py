@@ -41,6 +41,7 @@ def resample_img(itk_image, out_spacing=[2.0, 2.0, 2.0], is_label=False):
     return resample.Execute(itk_image)
 
 def scope_training_data(image, label):
+    print("IN SCOPE")
     first_non_backgroud_slice = float('inf')
     last_non_backgroud_slice = -1
     # Normalizw images
@@ -54,29 +55,34 @@ def scope_training_data(image, label):
             if(i < first_non_backgroud_slice):
                 first_non_backgroud_slice = i
             last_non_backgroud_slice = i
-
+    print("Image size " + str(image.shape))
     resize_label =  label[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128,156:-100]
     resize_image =  image[first_non_backgroud_slice:last_non_backgroud_slice+1,128:-128,156:-100]
-
+    print("RESIZE IMAGE " + str(resize_image.shape))
+    #print("IMAGE RESIZE " + str(resize_image.shape))
     image_with_channels = np.zeros((resize_image.shape[0], 256, 256, 5))
+    print("KILLED AFTER channels")
     for i in range(resize_image.shape[0]):
         if(i-2 >= 0):
             image_with_channels[i][...,0] = resize_image[i-2]
-        else:
-            image_with_channels[i][...,0] = image[first_non_backgroud_slice-1:first_non_backgroud_slice,128:-128,156:-100]
+        #else:
+            #image_with_channels[i][...,0] = image[first_non_backgroud_slice-1:first_non_backgroud_slice,128:-128,156:-100]
         if(i-1>= 0):
             image_with_channels[i][...,1] = resize_image[i-1]
-        else:
-            image_with_channels[i][...,1] = image[first_non_backgroud_slice-2:first_non_backgroud_slice - 1,128:-128,156:-100]
+        #else:
+        #    image_with_channels[i][...,1] = image[first_non_backgroud_slice-2:first_non_backgroud_slice - 1,128:-128,156:-100]
         image_with_channels[i][...,2] = resize_image[i]
         if(i+1 < resize_image.shape[0]):
             image_with_channels[i][...,3] = resize_image[i+1]
-        else:
-            image_with_channels[i][...,3] = image[last_non_backgroud_slice + 1:last_non_backgroud_slice +2,128:-128,156:-100]
+        #else:
+            #image_with_channels[i][...,3] = image[last_non_backgroud_slice + 1:last_non_backgroud_slice +2,128:-128,156:-100]
         if(i+2 < resize_image.shape[0]):
+            #print("IT HAS not")
             image_with_channels[i][...,4] = resize_image[i+2]
         else:
-            image_with_channels[i][...,4] = image[last_non_backgroud_slice + 2:last_non_backgroud_slice +3,128:-128,156:-100]
+            print(resize_image.shape, image.shape)
+            print("EDGE case")
+            #image_with_channels[i][...,4] = image[last_non_backgroud_slice + 2:last_non_backgroud_slice +3,128:-128,156:-100]
     #TODO check if channels becomes right for training 0. 1. and the last ones
     """if np.array_equal(image_with_channels[20][...,0],resize_image[18]):
         print("HURRA channel 0 er riktig")
@@ -99,16 +105,17 @@ def fetch_training_data_files():
         data = json.load(f)
         for i in range(len(data["training"])):
             subject_files = list()
-            subject_files.append(os.path.join(path.replace("/unet",""),data["training"][i]["image"].replace("./", "")))
-            subject_files.append(os.path.join( path.replace("/unet",""),data["training"][i]["label"].replace("./", "")))
+            subject_files.append(os.path.join(path.replace("/unet",""),data["training"][-i]["image"].replace("./", "")))
+            subject_files.append(os.path.join( path.replace("/unet",""),data["training"][-i]["label"].replace("./", "")))
             training_data_files.append(tuple(subject_files))
-            break
+
     return training_data_files
 
 def get_preprossed_numpy_arrays_from_file(image_path, label_path):
     sitk_image  = sitk.ReadImage(image_path)
     sitk_label  = sitk.ReadImage(label_path)
     print(image_path)
+    #print(sitk.GetArrayFromImage(sitk_image))
     return scope_training_data(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label))
 
 #TODO fiks so indexes
@@ -116,16 +123,17 @@ def get_train_and_label_numpy(number_of_slices, train_list, label_list):
     train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2], 5))
     label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]))
     index = 0
-    for i in range(number_of_slices):
-        for j in range(len(train_list)):
-            for k in range(train_list[j].shape[0]):
-                print(str(index+1) +"/" + str(number_of_slices))
-                #print("slices of image " + str(k+1) +"/" + str(train_list[j].shape[0]))
-                #print(train_list[j][k])
-                train_data[index] = train_list[j][k]
-                label_data[index] = label_list[j][k]
-                index += 1
-        break
+    for i in range(len(train_list)):
+        print("image " + str(i+1) +"/" + str(len(train_list)))
+
+        for k in range(train_list[i].shape[0]):
+            print(str(index+1) +"/" + str(train_data.shape[0]))
+            #print("slices of image " + str(k+1) +"/" + str(train_list[j].shape[0]))
+            #print(train_list[j][k])
+            train_data[index] = train_list[i][k]
+            label_data[index] = label_list[i][k]
+            index += 1
+
     return train_data, label_data
 
 def write_numpyimage_to_file(numpy_image, path):
@@ -149,7 +157,9 @@ def get_training_data():
     count_slices = 0
     files = fetch_training_data_files()
     for element in files:
+        print(element)
         i, l = get_preprossed_numpy_arrays_from_file(element[0], element[1])
+        print("IT RETURED FROM SCOPE")
         count_slices += i.shape[0]
         traindata.append(i)
         labeldata.append(l)
