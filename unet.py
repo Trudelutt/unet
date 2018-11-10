@@ -17,7 +17,7 @@ def unet(pretrained_weights = None,input_size = (256,256, 5)):
    # s = Lambda(lambda x: x / 255) (inputs)
 
     c1 = Conv2D(64, (3, 3), padding='same') (inputs)
-    c1 = BatchNormalization()(c1)
+    #c1 = BatchNormalization()(c1)
     c1 = Activation('relu')(c1)
    # c1 = Dropout(0.1) (c1)
     c1 = Conv2D(64, (3, 3), activation='relu', padding='same') (c1)
@@ -68,7 +68,7 @@ def unet(pretrained_weights = None,input_size = (256,256, 5)):
 
 #Decode block 1
     u7 = Conv2DTranspose(512, (2, 2), strides=(2, 2), padding='same') (c4)
-    #u7 = BatchNormalization()(u7)
+    u7 = BatchNormalization()(u7)
     u7 = concatenate([u7, c3])
     c7 = Conv2D(512, (3, 3), padding='same') (u7)
     c7 = BatchNormalization()(c7)
@@ -83,7 +83,7 @@ def unet(pretrained_weights = None,input_size = (256,256, 5)):
 
 #Decode block 2
     u8 = Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same') (c7)
-    #u8 = BatchNormalization()(u8)
+    u8 = BatchNormalization()(u8)
     u8 = concatenate([u8, c2])
     c8 = Conv2D(256, (3, 3), padding='same') (u8)
     c8 = BatchNormalization()(c8)
@@ -102,16 +102,19 @@ def unet(pretrained_weights = None,input_size = (256,256, 5)):
     c9 = Conv2D(128, (3, 3), padding='same') (u9)
     c9 = BatchNormalization()(c9)
     c9 = Activation('relu')(c9)
-    #c9 = Conv2D(64, (3, 3), activation='relu', padding='same') (u9)
-    #c9 = Dropout(0.1) (c9)
-    c9 = Conv2D(64, (3, 3), padding='same') (c9)
-    #c9 = BatchNormalization()(c9)
+    c9 = Conv2D(64, (3, 3), activation='relu', padding='same') (u9)
+    c9 = BatchNormalization()(c9)
     c9 = Activation('relu')(c9)
+
+#c9 = Dropout(0.1) (c9)
+    #c9 = Conv2D(64, (3, 3), padding='same') (c9)
+    #c9 = BatchNormalization()(c9)
+    #c9 = Activation('relu')(c9)
 
     outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer=SGD(lr=10e-3), loss=dice_coefficient_loss, metrics=[mean_iou])
+    model.compile(optimizer=SGD(lr=10e-4, momentum=0.9), loss=dice_coefficient_loss, metrics=[mean_iou])
     model.summary()
     return model
 

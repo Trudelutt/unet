@@ -15,7 +15,7 @@ from metric import mean_iou
 def gpu_config():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth=True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.2
+    config.gpu_options.per_process_gpu_memory_fraction = 0.6
     #set_session(tf.Session(config = config))
     sess = tf.Session(config=config)
     sess.run(tf.global_variables_initializer())
@@ -42,8 +42,8 @@ def train_model(model, input, target):
    # print("label sample" + str(target))
 
     model_checkpoint = ModelCheckpoint('unet_vessels.hdf5', monitor='loss',verbose=1, save_best_only=True)
-    model_earlyStopp = EarlyStopping(monitor='loss', min_delta=0, patience=0, verbose=1, mode='min', baseline=None, restore_best_weights=False)
-    model.fit(x=input, y= target, batch_size=1, epochs=100, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
+    model_earlyStopp = EarlyStopping(monitor='loss', min_delta=0, patience=3, verbose=1, mode='min', baseline=None, restore_best_weights=False)
+    model.fit(x=input, y= target, batch_size=1, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
 
 def predict_model(model, input, target):
     print("Starting predictions")
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     #show_predictions(train[20], one_hot_label[20])
     #new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
     print("Training sample" + str(train.shape))
-    train_model(model, train[20:21], one_hot_label[20:21])
+    train_model(model, train[20:22], one_hot_label[20:22])
     #pre_train_model = load_model("unet_vessels.hdf5", custom_objects={'mean_iou': mean_iou})
     one_sample = train[20:21]
     predict_model(model, one_sample, one_hot_label[20:21])
