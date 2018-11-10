@@ -105,8 +105,8 @@ def fetch_training_data_files():
         data = json.load(f)
         for i in range(len(data["training"])):
             subject_files = list()
-            subject_files.append(os.path.join(path.replace("/unet",""),data["training"][-i]["image"].replace("./", "")))
-            subject_files.append(os.path.join( path.replace("/unet",""),data["training"][-i]["label"].replace("./", "")))
+            subject_files.append(os.path.join(path.replace("/unet",""),data["training"][i]["image"].replace("./", "")))
+            subject_files.append(os.path.join( path.replace("/unet",""),data["training"][i]["label"].replace("./", "")))
             training_data_files.append(tuple(subject_files))
 
     return training_data_files
