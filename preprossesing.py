@@ -133,17 +133,25 @@ def fetch_training_data_hapaticv_files():
     return training_data_files
 
 def fetch_training_data_ca_files(label="LM"):
-    data_path = glob("../st.Olav/*/*/*/*CCTA.nii.gz")
-    label_path = glob("../st.Olav/*/*/*/*"+label+".nii.gz")
+    path = glob("../st.Olav/*/*/*/")
     training_data_files = list()
-    for i in range(len(data_path)):
-        training_data_files.append(tuple([data_path[i], label_path[i]]))
+    for i in range(len(path)):
+        try:
+            data_path = glob(path[i] + "*CCTA.nii.gz")[0]
+            print(glob(path[i] + "*" + label + ".nii.gz"))
+            label_path = glob(path[i] + "*" + label + ".nii.gz")[0]
+        except IndexError:
+            print("out of range for %s" %(path[i]))
+        else:
+            training_data_files.append(tuple([data_path, label_path]))
     return training_data_files
 
 def get_preprossed_numpy_arrays_from_file(image_path, label_path):
+    print(image_path)
+    print(label_path)
     sitk_image  = sitk.ReadImage(image_path)
     sitk_label  = sitk.ReadImage(label_path)
-    print(image_path)
+
     #print(sitk.GetArrayFromImage(sitk_image))
     return preprosses_images(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label))
 
