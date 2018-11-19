@@ -5,11 +5,12 @@ import scipy.misc
 from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, EarlyStopping, TerminateOnNaN
 from keras.models import load_model
-from unet import unet
-from preprossesing import get_training_data
+from model import unet, BVNet
+from preprossesing import *
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 from metric import mean_iou
+from dice_coefficient_loss import dice_coefficient_loss
 
 
 def gpu_config():
@@ -36,21 +37,20 @@ def visulize_predic(p):
                 new_p[i][j] = 1
     return new_p
 
-def train_model(model, input, target):
+def train_model(model, input, target, val_x, val_y):
     print("Inside training")
     print("Training sample" + str(input.shape))
    # print("label sample" + str(target))
 
     model_checkpoint = ModelCheckpoint('unet_vessels.hdf5', monitor='loss',verbose=1, save_best_only=True)
-    model_earlyStopp = EarlyStopping(monitor='loss', min_delta=0, patience=3, verbose=1, mode='min', baseline=None, restore_best_weights=False)
-    model.fit(x=input, y= target, batch_size=1, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
+    model_earlyStopp = EarlyStopping(monitor='val_loss', min_delta=0, patience=7, verbose=1, mode='min', baseline=None, restore_best_weights=False)
+    model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=1, epochs=1, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
 
 def predict_model(model, input, target):
     print("Starting predictions")
     p = model.predict(input)
     print("prediction: " + str(p))
-    write_predictions_to_file(p, target)
-    #show_predictions(p, target)
+    write_pridiction_to_file(target,p, path="./predictions/prediction.nii.gz")
 
 
 def show_predictions(prediction_array, mask_array):
@@ -67,7 +67,7 @@ def show_predictions(prediction_array, mask_array):
     plt.imshow(mask_array[...,0], cmap='gray')
     plt.show()
 
-def write_predictions_to_file(p, target):
+def write_predictions_to_pngfile(p, target):
     print("Writing predictions to file...")
     write_png("./predictions/gt20.png", target[0][...,0])
 
@@ -76,15 +76,22 @@ def write_predictions_to_file(p, target):
     #write_png("./predictions/predictiontumor5.png", p[0][...,2])
 
 if __name__ == "__main__":
+    overwrite = True
     gpu_config()
-    model = unet()
-    train, label = get_training_data()
+    model = BVNet()
 
-    one_hot_label = to_categorical(label, num_classes=3)[...,1:-1]
+    train_files, val_files, test_files = get_data_files(data="ca", label="LM")
+    train_data, label_data = get_train_data_slices(train_files[:1])
+    val_data, val_label = get_slices(val_files[:1])
+
+    #one_hot_label = to_categorical(label, num_classes=3)[...,1:-1]
     #show_predictions(train[20], one_hot_label[20])
     #new_x_train = train.reshape(train.shape[0], train.shape[1], train.shape[2], 1)
-    print("Training sample" + str(train.shape))
-    train_model(model, train[20:22], one_hot_label[20:22])
-    #pre_train_model = load_model("unet_vessels.hdf5", custom_objects={'mean_iou': mean_iou})
-    one_sample = train[20:21]
-    predict_model(model, one_sample, one_hot_label[20:21])
+    #print("Training sample" + str(train_data.shape))
+    if  not overwrite:
+        prediction_model= load_model("unet_vessels.hdf5", custom_objects={'mean_iou': mean_iou,  'dice_coefficient_loss': dice_coefficient_loss})
+    else:
+        train_model(model, train_data, label_data, val_data, val_label)
+        prediction_model = model
+    pred_sample, pred_label = get_prediced_image_of_test_files(test_files, 0)
+    predict_model(prediction_model, pred_sample, pred_sample)
