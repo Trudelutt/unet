@@ -216,7 +216,7 @@ def get_train_data_slices(train_files):
     labeldata = []
     count_slices = 0
     for element in train_files:
-        print(element)
+        print(element[0])
         numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1])
         resized_image, resized_label = remove_slices_with_just_background(numpy_image, numpy_label)
         i, l = add_neighbour_slides_training_data(resized_image, resized_label)
