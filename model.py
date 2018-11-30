@@ -7,7 +7,7 @@ from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as keras
 from dice_coefficient_loss import dice_coefficient_loss, dice_coefficient
-from metric import mean_iou
+from metric import *
 
 
 #TODO make BVNet static like unet
@@ -114,7 +114,7 @@ def BVNet(pretrained_weights = None,input_size = (256,256, 5)):
     outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer=SGD(lr=10e-4, momentum=0.9), loss=dice_coefficient_loss, metrics=[mean_iou])
+    model.compile(optimizer=SGD(lr=10e-4, momentum=0.9), loss=dsc_loss, metrics=[mean_iou, accuracy, recall, precision])
     model.summary()
     return model
 

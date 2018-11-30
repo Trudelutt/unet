@@ -138,7 +138,6 @@ def fetch_training_data_ca_files(label="LM"):
     for i in range(len(path)):
         try:
             data_path = glob(path[i] + "*CCTA.nii.gz")[0]
-            print(glob(path[i] + "*" + label + ".nii.gz"))
             label_path = glob(path[i] + "*" + label + ".nii.gz")[0]
         except IndexError:
             print("out of range for %s" %(path[i]))
@@ -147,8 +146,8 @@ def fetch_training_data_ca_files(label="LM"):
     return training_data_files
 
 def get_preprossed_numpy_arrays_from_file(image_path, label_path):
-    print(image_path)
-    print(label_path)
+   # print(image_path)
+   # print(label_path)
     sitk_image  = sitk.ReadImage(image_path)
     sitk_label  = sitk.ReadImage(label_path)
 
@@ -235,7 +234,6 @@ def get_slices(files):
     count_slices = 0
     for element in files:
         numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1])
-        #resized_image, resized_label = remove_slices_with_just_background(numpy_image, numpy_label)
         i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
         count_slices += i.shape[0]
         input_data_list.append(i)
