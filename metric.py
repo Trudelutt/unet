@@ -43,7 +43,7 @@ def dsc(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    return 2. true_positives / (possible_positives + predicted_positives+ K.epsilon())
+    return 2. * true_positives / (possible_positives + predicted_positives+ K.epsilon())
 
 
 def dsc_loss(y_true, y_pred):
