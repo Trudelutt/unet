@@ -39,6 +39,14 @@ def recall(y_true, y_pred):
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
+def dsc(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    union =  K.sum(y_true) +  K.sum(K.round(K.clip(y_pred, 0, 1))) + K.epsilon()
+    return (2.*true_positives) / union
+
+def dcs_loss(y_true, y_pred):
+    return 1-dsc(y_true, y_pred)
+
 
 
 
