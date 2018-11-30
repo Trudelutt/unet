@@ -44,9 +44,9 @@ import matplotlib.pyplot as plt
 def split_train_val_test(files):
     n_files = len(files)
     #print(n_files)
-    sep_train = int(n_files*0.8)
+    sep_train = int(n_files*0.7)
     #print(sep_train)
-    sep_val = int(sep_train + sep_train/2)
+    sep_val = int(n_files*0.9)
     n_train = sep_train
     n_val = sep_val - sep_train
     n_test = n_files - n_train - n_val
