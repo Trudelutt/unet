@@ -43,7 +43,7 @@ def dsc(y_true, y_pred):
     return recall(y_true, y_pred) + precision(y_true, y_pred)
 
 
-def dcs_loss(y_true, y_pred):
+def dsc_loss(y_true, y_pred):
     return 1-dsc(y_true, y_pred)
 
 
