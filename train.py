@@ -99,7 +99,7 @@ if __name__ == "__main__":
     gpu_config()
     model_name = "BVNet"
     label = "LM"
-    modelpath = modelname+ "_"+ label
+    modelpath = model_name+ "_"+ label
     if model_name == "BVNet":
         model = BVNet()
     else:
