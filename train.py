@@ -31,6 +31,7 @@ def train_model(model, input, target, val_x, val_y, modelpath):
     history = model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=1, epochs=1, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
     with open('./history/'+ modelpath + '.json', 'w') as f:
         json.dump(history.history, f)
+        print("Saved history....")
 
 def predict_model(model, input, target, name='LM_01'):
     print("Starting predictions")
@@ -67,10 +68,10 @@ if __name__ == "__main__":
     print("Done geting validation slices...")
 
     if  not overwrite:
-        prediction_model= load_model(modelpath +'.hdf5', custom_objects=custom_objects)
+        prediction_model= load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     else:
         train_model(model, train_data, label_data, val_data, val_label, modelpath=modelpath)
-        prediction_model = load_model(modelpath +'.hdf5', custom_objects=custom_objects)
+        prediction_model = load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     for i in range(len(test_files)):
         pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i)
         predict_model(prediction_model, pred_sample, pred_sample, name=modelpath+"_"+str(i)+"_")
