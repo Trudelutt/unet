@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import scipy.misc
+import json
 from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, EarlyStopping, TerminateOnNaN
 from keras.models import load_model
@@ -77,7 +78,8 @@ def train_model(model, input, target, val_x, val_y, modelpath):
     model_checkpoint = ModelCheckpoint("./models/"+ modelpath +".hdf5", monitor='val_loss',verbose=1, save_best_only=True)
     model_earlyStopp = EarlyStopping(monitor='val_loss', min_delta=0, patience=7, verbose=1, mode='min', baseline=None, restore_best_weights=False)
     history = model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=1, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
-    dump(history, open('./history/'+modelpath + '_history.pkl', 'wb'))
+    with open('./history/'+ modelpath + '.json', 'w') as f:
+    json.dump(hist.history, f)
 
 def predict_model(model, input, target, name='LM_01'):
     print("Starting predictions")
@@ -114,12 +116,12 @@ if __name__ == "__main__":
 
 
     if  not overwrite:
-        prediction_model= load_model(modelpath, custom_objects={'mean_iou': mean_iou, 'accuracy':accuracy, 'recall':recall,
-        'precision':precision, 'dsc': dsc, 'dsc_loss': dsc_loss})
+        prediction_model= load_model(modelpath +'.hdf5', custom_objects={'mean_iou': mean_iou, 'binary_accuracy':binary_accuracy, 'recall':recall,
+        'precision':precision, 'dsc': dsc, 'dice_coefficient_loss': dice_coefficient_loss})
     else:
         train_model(model, train_data, label_data, val_data, val_label, modelpath=modelpath)
-        prediction_model = load_model(modelpath, custom_objects={'mean_iou': mean_iou, 'accuracy':accuracy, 'recall':recall,
-        'precision':precision, 'dsc': dsc, 'dsc_loss': dsc_loss})
+        prediction_model = load_model(modelpath +'.hdf5', custom_objects={'binary_accuracy':binary_accuracy, 'recall':recall,
+        'precision':precision, 'dsc': dsc, 'dice_coefficient_loss': dice_coefficient_loss})
     for i in range(len(test_files)):
         pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i)
         #print(pred_sample)
