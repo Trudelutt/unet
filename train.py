@@ -23,31 +23,6 @@ def gpu_config():
     sess.run(tf.global_variables_initializer())
 
 
-def plot_history(history, name, save=False):
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title(name+' accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'val'], loc='upper left')
-    if save:
-        plt.savefig('fig/'+name+'_acc.png')
-        plt.close()
-    else:
-        plt.show()
-
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title(name+' loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'val'], loc='upper left')
-    if save:
-        plt.savefig('fig/'+name+'_loss.png')
-        plt.close()
-    else:
-        plt.show()
-
 def train_model(model, input, target, val_x, val_y, modelpath):
     print("Inside training")
 
@@ -67,6 +42,7 @@ def evaluation(model, test_files):
     test_x, test_y = get_train_data_slices(train_files)
     print("Starting evaluation.....")
     print(model.evaluate(test_x, test_y), batch_size=1, verbose=1)
+    print(model.metrics_names)
     print("Evaluation done..")
 
 
@@ -77,7 +53,7 @@ if __name__ == "__main__":
     label = "LM"
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
-    'precision':precision, 'dsc': dsc, 'dice_coefficient_loss': dice_coefficient_loss}
+    'precision':precision, 'dsc': dsc, 'dsc_loss': dsc_loss}
     if model_name == "BVNet":
         model = BVNet()
     else:
