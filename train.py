@@ -33,14 +33,14 @@ def train_model(model, input, target, val_x, val_y, modelpath):
         json.dump(history.history, f)
         print("Saved history....")
 
-def predict_model(model, input, target, name='LM_01', label):
+def predict_model(model, input, target, name='LM_01', label="LM"):
     print("Starting predictions")
     p = model.predict(input,  batch_size=1, verbose=1)
     write_pridiction_to_file(target,p, path="./predictions/" +label + "/" + name + "prediction.nii.gz")
 
 
 def evaluation(model, test_files):
-    test_x, test_y = get_train_data_slices(train_files)
+    test_x, test_y = get_train_data_slices(test_files)
     print("Starting evaluation.....")
     print(model.evaluate(test_x, test_y), batch_size=1, verbose=1)
     print(model.metrics_names)
@@ -51,6 +51,7 @@ if __name__ == "__main__":
     overwrite = True
     gpu_config()
     model_name = "BVNet"
+    #Hepatic Vessel has label HV
     label = "LM"
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
@@ -74,5 +75,5 @@ if __name__ == "__main__":
         prediction_model = load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     for i in range(len(test_files)):
         pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i)
-        predict_model(prediction_model, pred_sample, pred_sample, name=modelpath+"_"+str(i)+"_", label)
+        predict_model(prediction_model, pred_sample, pred_sample, name=modelpath+"_"+str(i)+"_", label=label)
     evaluation(prediction_model, test_files)

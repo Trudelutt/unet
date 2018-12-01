@@ -180,12 +180,11 @@ def unet(pretrained_weights=None, input_size=(256, 256, 1), number_of_classes=1,
     c9 = Conv2D(64, (3, 3), activation='relu',
                 padding='same')(c9)
 
-    outputs = Conv2D(number_of_classes, (1, 1), activation='sigmoid')(c9)
+    outputs = Conv2D(number_of_classes, (1, 1), activation='softmax')(c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
 
-    model.compile(optimizer=Adam(lr=10e-5), loss=loss_function,
-                  metrics=['accuracy'])
+    model.compile(optimizer=SGD(lr=10e-5), loss=dsc_loss, metrics=[binary_accuracy, dsc, recall, precision])
     model.summary()
     return model
 
