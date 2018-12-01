@@ -75,5 +75,5 @@ if __name__ == "__main__":
         prediction_model = load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     for i in range(len(test_files)):
         pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i)
-        predict_model(prediction_model, pred_sample, pred_sample, name=modelpath+"_"+str(i)+"_", label=label)
+        predict_model(prediction_model, pred_sample, pred_label, name=modelpath+"_"+str(i)+"_", label=label)
     evaluation(prediction_model, test_files)
