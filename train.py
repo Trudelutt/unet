@@ -55,7 +55,7 @@ if __name__ == "__main__":
     label = "LM"
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
-    'precision':precision, 'dice_coefficient': dice_coefficient, 'dice_coefficient_loss': dice_coefficient_loss}
+    'precision':precision, 'dsc': dsc, 'dice_coefficient_loss': dice_coefficient_loss}
     if model_name == "BVNet":
         model = BVNet()
     else:
