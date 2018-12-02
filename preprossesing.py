@@ -2,59 +2,22 @@ import os
 import json
 import SimpleITK as sitk
 import numpy as np
-from glob import glob
 import matplotlib.pyplot as plt
+from glob import glob
+from random import shuffle
 
-# A path to a T1-weighted brain .nii image:
-#t1_fn = '../Task02_Heart/imagesTr/la_003.nii'
 
-# Read the .nii image containing the volume with SimpleITK:
-#sitk_t1 = sitk.ReadImage(t1_fn)
-#itk_label = sitk.ReadImage('../Task02_Heart/labelsTr/la_003.nii')
-# and access the numpy array:
-#t1 = sitk.GetArrayFromImage(sitk_t1)
-
-"""def resample_img(itk_image, out_spacing=[2.0, 2.0, 2.0], is_label=False):
-
-    # Resample images to 2mm spacing with SimpleITK
-    original_spacing = itk_image.GetSpacing()
-    original_size = itk_image.GetSize()
-
-    out_size = [
-        int(np.round(original_size[0] * (original_spacing[0] / out_spacing[0]))),
-        int(np.round(original_size[1] * (original_spacing[1] / out_spacing[1]))),
-        int(np.round(original_size[2] * (original_spacing[2] / out_spacing[2])))]
-    out_size = [ 256,256, original_size[2]]
-
-    resample = sitk.ResampleImageFilter()
-    resample.SetOutputSpacing(out_spacing)
-    resample.SetSize(out_size)
-    resample.SetOutputDirection(itk_image.GetDirection())
-    resample.SetOutputOrigin(itk_image.GetOrigin())
-    resample.SetTransform(sitk.Transform())
-    resample.SetDefaultPixelValue(itk_image.GetPixelIDValue())
-
-    if is_label:
-        resample.SetInterpolator(sitk.sitkNearestNeighbor)
-    else:
-        resample.SetInterpolator(sitk.sitkBSpline)
-
-    return resample.Execute(itk_image)"""
 
 def split_train_val_test(files):
     n_files = len(files)
-    #print(n_files)
-    sep_train = int(n_files*0.7)
-    #print(sep_train)
-    sep_val = int(n_files*0.9)
-    n_train = sep_train
-    n_val = sep_val - sep_train
-    n_test = n_files - n_train - n_val
+    number_test = n_files//6
 
-    train_files = files[:sep_train]
-    val_files = files[sep_train:sep_val]
-
-    test_files = files[sep_val:]
+    val_files = files[::number_test]
+    test_files = files[1::number_test]
+    train_files = [x for x in files if x not in val_files and x not in test_files]
+    print(n_files, len(train_files), len(val_files), len(test_files))
+    if(bool(set(val_files) & set(test_files) & set(train_files))):
+        print("THEY have some element in common")
 
     return train_files, val_files, test_files
 
@@ -248,6 +211,12 @@ def get_slices(files):
 
 if __name__ == "__main__":
     train_files, val_files, test_files = get_data_files(data="ca", label="LM")
-    train_data, label_data = get_train_data_slices(train_files[:1])
-    print(train_data)
+    print("#####")
+    print(val_files)
+    print("#####")
+    print(test_files)
+    print("#####")
+    print(train_files)
+    #train_data, label_data = get_train_data_slices(train_files[:1])
+    #print(train_data)
     #write_pridiction_to_file(train_data[...,2], label_data)

@@ -11,7 +11,7 @@ from preprossesing import *
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 from metric import *
-from dice_coefficient_loss import dice_coefficient_loss
+from dice_coefficient_loss import dice_coefficient_loss, dice_coefficient
 
 
 def gpu_config():
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     label = "LM"
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
-    'precision':precision, 'dsc': dsc, 'dsc_loss': dsc_loss}
+    'precision':precision, 'dice_coefficient': dice_coefficient, 'dice_coefficient_loss': dice_coefficient_loss}
     if model_name == "BVNet":
         model = BVNet()
     else:
