@@ -10,7 +10,7 @@ from random import shuffle
 
 def split_train_val_test(files):
     n_files = len(files)
-    number_test = n_files//6
+    number_test = n_files//((n_files - int(n_files*0.8))//2)
 
     val_files = files[::number_test]
     test_files = files[1::number_test]
@@ -210,7 +210,7 @@ def get_slices(files):
 
 
 if __name__ == "__main__":
-    train_files, val_files, test_files = get_data_files(data="ca", label="LM")
+    train_files, val_files, test_files = get_data_files(data="HV", label="Aorta")
     print("#####")
     print(val_files)
     print("#####")
