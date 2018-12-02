@@ -37,7 +37,7 @@ def remove_slices_with_just_background(image, label):
             if(i < first_non_backgroud_slice):
                 first_non_backgroud_slice = i
             last_non_backgroud_slice = i
-    resize_label =  label[first_non_backgroud_slice - 2 - 2 :last_non_backgroud_slice + 1 + 2 + 2]
+    resize_label =  label[first_non_backgroud_slice - 2 :last_non_backgroud_slice + 1  + 2]
     resize_image =  image[first_non_backgroud_slice-2:last_non_backgroud_slice+1+2]
     return resize_image, resize_label
 
