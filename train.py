@@ -40,7 +40,7 @@ def predict_model(model, input, target, name='LM_01', label="LM"):
 
 
 def evaluation(model, test_files):
-    test_x, test_y = get_train_data_slices(test_files)
+    test_x, test_y = get_slices(test_files)
     print("Starting evaluation.....")
     print(model.evaluate(test_x, test_y, batch_size=1, verbose=1))
     print(model.metrics_names)
