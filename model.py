@@ -111,10 +111,10 @@ def BVNet(pretrained_weights = None,input_size = (256,256, 5)):
     #c9 = BatchNormalization()(c9)
     #c9 = Activation('relu')(c9)
 
-    outputs = Conv2D(1, (1, 1), activation='softmax') (c9)
+    outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9, decay=0.02), loss=dice_coefficient_loss, metrics=[binary_accuracy, dice_coefficient, recall, precision])
+    model.compile(optimizer=SGD(lr=10e-5, momentum=0.9, decay=0.02), loss=dice_coefficient_loss, metrics=[binary_accuracy, dice_coefficient, recall, precision])
     model.summary()
     return model
 
