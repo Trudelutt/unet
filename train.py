@@ -27,8 +27,8 @@ def train_model(model, input, target, val_x, val_y, modelpath):
     print("Inside training")
 
     model_checkpoint = ModelCheckpoint("./models/"+ modelpath +".hdf5", monitor='val_loss',verbose=1, save_best_only=True)
-    model_earlyStopp = EarlyStopping(monitor='val_loss', min_delta=0, patience=7, verbose=1, mode='min', baseline=None, restore_best_weights=False)
-    history = model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=4, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
+    model_earlyStopp = EarlyStopping(monitor='val_loss', min_delta=0, patience=12, verbose=1, mode='min', baseline=None, restore_best_weights=False)
+    history = model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=2, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
     with open('./history/'+ modelpath + '.json', 'w') as f:
         json.dump(history.history, f)
         print("Saved history....")
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     gpu_config()
     model_name = "BVNet"
     #Hepatic Vessel has label HV
-    label = "LM"
+    label = "RCA"
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
     'precision':precision, 'dice_coefficient': dice_coefficient, 'dice_coefficient_loss': dice_coefficient_loss}
