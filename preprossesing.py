@@ -22,38 +22,72 @@ def split_train_val_test(files):
     return train_files, val_files, test_files
 
 #TODO check if any information is lost here
-def preprosses_images(image, label):
+def preprosses_images(image, label, tag):
     image -= np.min(image)
     image = image/ np.max(image)
     image -= np.mean(image)
     image = image / np.std(image)
-    return image[:,128:-128,128:-128], label[:,128:-128,128:-128]
+    test = label[:,128:-128,200:-56]
+    if tag == "HV":
+        print(image[:,128:-128,200:-56].shape)
+        return image[:,128:-128,200:-56], label[:,128:-128,200:-56]
+    else:
+        return image[:,128:-128,128:-128], label[:,128:-128,128:-128]
 
 def remove_slices_with_just_background(image, label):
     first_non_backgroud_slice = float('inf')
     last_non_backgroud_slice = -1
+    image_list = []
+    label_list = []
     for i in range(image.shape[0]):
         if(1 in label[i]):
             if(i < first_non_backgroud_slice):
                 first_non_backgroud_slice = i
             last_non_backgroud_slice = i
-    resize_label =  label[first_non_backgroud_slice - 2 :last_non_backgroud_slice + 1  + 2]
-    resize_image =  image[first_non_backgroud_slice-2:last_non_backgroud_slice+1+2]
+    resize_label =  label[first_non_backgroud_slice:last_non_backgroud_slice + 1]
+    resize_image =  image[first_non_backgroud_slice:last_non_backgroud_slice+1]
     return resize_image, resize_label
 
+
 def add_neighbour_slides_training_data(image, label):
-    image_with_channels = np.zeros((image.shape[0]-4, 256, 256, 5))
-    for i in range(image_with_channels.shape[0]):
-        if(i < image.shape[0]):
-            image_with_channels[i][...,0] = image[i]
-        if(i+1 < image.shape[0]):
-            image_with_channels[i][...,1] = image[i+1]
-        if(i+2 < image.shape[0]):
-            image_with_channels[i][...,2] = image[i+2]
-        if(i+3 < image.shape[0]):
-            image_with_channels[i][...,3] = image[i+3]
-        if(i+4 < image.shape[0]):
-            image_with_channels[i][...,4] = image[i+4]
+    image_with_channels = np.zeros((image.shape[0], image.shape[1], image.shape[2], 5))
+    zeros_image = np.zeros(image[0].shape)
+    print(image.shape)
+    for i in range(image.shape[0]):
+        if(i == 0):
+            image_with_channels[i][...,0] = zeros_image
+            image_with_channels[i][...,1] = zeros_image
+            image_with_channels[i][...,2] = image[i]
+            image_with_channels[i][...,3] = image[i+1]
+            image_with_channels[i][...,4] = image[i+2]
+        elif(i == 1):
+            image_with_channels[i][...,0] = zeros_image
+            image_with_channels[i][...,1] = image[i-1]
+            image_with_channels[i][...,2] = image[i]
+            image_with_channels[i][...,3] = image[i+1]
+            image_with_channels[i][...,4] = image[i+2]
+        elif(i == image.shape[0]-2):
+            image_with_channels[i][...,0] = image[i-2]
+            image_with_channels[i][...,1] = image[i-1]
+            image_with_channels[i][...,2] = image[i]
+            image_with_channels[i][...,3] = image[i+1]
+            image_with_channels[i][...,4] = zeros_image
+        elif(i == image.shape[0]-1):
+            image_with_channels[i][...,0] = image[i-2]
+            image_with_channels[i][...,1] = image[i-1]
+            image_with_channels[i][...,2] = image[i]
+            image_with_channels[i][...,3] = zeros_image
+            image_with_channels[i][...,4] = zeros_image
+        else:
+            image_with_channels[i][...,0] = image[i-2]
+            image_with_channels[i][...,1] = image[i-1]
+            image_with_channels[i][...,2] = image[i]
+            image_with_channels[i][...,3] = image[i+1]
+            image_with_channels[i][...,4] = image[i+2]
+    return image_with_channels, label
+
+
+
 
     #TODO check if channels becomes right for training 0. 1. and the last ones
     """if np.array_equal(image_with_channels[20][...,0],image[20]):
@@ -82,6 +116,7 @@ def fetch_training_data_hapaticv_files():
             training_data_files.append(tuple(subject_files))
     return training_data_files
 
+
 def fetch_training_data_ca_files(label="LM"):
     path = glob("../st.Olav/*/*/*/")
     training_data_files = list()
@@ -95,21 +130,20 @@ def fetch_training_data_ca_files(label="LM"):
             training_data_files.append(tuple([data_path, label_path]))
     return training_data_files
 
-def get_preprossed_numpy_arrays_from_file(image_path, label_path):
+
+def get_preprossed_numpy_arrays_from_file(image_path, label_path, tag):
     sitk_image  = sitk.ReadImage(image_path)
     sitk_label  = sitk.ReadImage(label_path)
-    return preprosses_images(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label))
+    return preprosses_images(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label), tag)
 
-#TODO fiks so indexes
+
 def get_train_and_label_numpy(number_of_slices, train_list, label_list):
     train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2], 5))
     label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]))
     index = 0
     for i in range(len(train_list)):
-        #print("image " + str(i+1) +"/" + str(len(train_list)))
         with tqdm(total=train_list[i].shape[0], desc='Adds splice  from image ' + str(i+1) +"/" + str(len(train_list))) as t:
             for k in range(train_list[i].shape[0]):
-                #print(str(index+1) +"/" + str(train_data.shape[0]))
                 train_data[index] = train_list[i][k]
                 label_data[index] = label_list[i][k]
                 index += 1
@@ -143,8 +177,6 @@ def write_pridiction_to_file(image_array, prediction_array, path="./predictions/
     print("Writing prediction is done...")
 
 
-
-
 # Assume to have some sitk image (itk_image) and label (itk_label)
 def get_data_files(data="ca", label="LM"):
     if data == "ca":
@@ -156,30 +188,32 @@ def get_data_files(data="ca", label="LM"):
     return split_train_val_test(files)
 
 
-def get_train_data_slices(train_files):
+def get_train_data_slices(train_files, tag = "LM"):
     traindata = []
     labeldata = []
     count_slices = 0
     for element in train_files:
         print(element[0])
-        numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1])
-        resized_image, resized_label = remove_slices_with_just_background(numpy_image, numpy_label)
-        i, l = add_neighbour_slides_training_data(resized_image, resized_label)
-        count_slices += i.shape[0]
-        traindata.append(i)
-        labeldata.append(l)
+        numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1], tag)
+        i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
+        resized_image, resized_label = remove_slices_with_just_background(i, l)
+
+        count_slices += resized_image.shape[0]
+        traindata.append(resized_image)
+        labeldata.append(resized_label)
     train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     label = label_data.reshape((label_data.shape[0], label_data.shape[1], label_data.shape[2], 1))
     return train_data, label
 
-def get_slices(files):
+
+def get_slices(files, tag="LM"):
     input_data_list = []
     label_data_list = []
     count_slices = 0
     for element in files:
-        numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1])
+        numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1],tag)
         i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
         count_slices += i.shape[0]
         input_data_list.append(i)
@@ -199,6 +233,13 @@ if __name__ == "__main__":
     #print(test_files)
     #print("#####")
     #print(train_files)
-    train_data, label_data = get_train_data_slices(train_files[:1])
+    train_data, label_data = get_train_data_slices(train_files[:1], tag ="Aorta")
     print(train_data)
+    plt.figure()
+    plt.imshow(label_data[0][...,0])
+    plt.figure()
+    plt.imshow(label_data[-1][...,0])
+    plt.figure()
+    plt.imshow(label_data[label_data.shape[0]//2][...,0])
+    plt.show()
     #write_pridiction_to_file(train_data[...,2], label_data)
