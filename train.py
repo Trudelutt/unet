@@ -28,7 +28,7 @@ def train_model(model, input, target, val_x, val_y, modelpath):
 
     model_checkpoint = ModelCheckpoint("./models/"+ modelpath +".hdf5", monitor='val_loss',verbose=1, save_best_only=True)
     model_earlyStopp = EarlyStopping(monitor='val_loss', min_delta=0, patience=12, verbose=1, mode='min', baseline=None, restore_best_weights=False)
-    history = model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=2, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
+    history = model.fit(x=input, y= target, validation_data=(val_x, val_y), batch_size=4, epochs=500, verbose=1, callbacks=[model_checkpoint, model_earlyStopp, TerminateOnNaN()])
     with open('./history/'+ modelpath + '.json', 'w') as f:
         json.dump(history.history, f)
         print("Saved history....")
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         model = unet()
 
     train_files, val_files, test_files = get_data_files(data="ca", label=label)
-    train_data, label_data = get_train_data_slices(train_files)
+    train_data, label_data = get_train_data_slices(train_files, tag=label)
     print("Done geting training slices...")
     val_data, val_label = get_slices(val_files)
     print("Done geting validation slices...")
