@@ -56,17 +56,18 @@ if __name__ == "__main__":
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
     'precision':precision, 'dice_coefficient': dice_coefficient, 'dice_coefficient_loss': dice_coefficient_loss}
-    if model_name == "BVNet":
-        model = BVNet()
-    else:
-        model_name="unet"
-        model = unet()
 
     train_files, val_files, test_files = get_data_files(data="ca", label=label)
     train_data, label_data = get_train_data_slices(train_files, tag=label)
     print("Done geting training slices...")
     val_data, val_label = get_slices(val_files)
     print("Done geting validation slices...")
+
+    if model_name == "BVNet":
+        model = BVNet(input_size =train_data.shape[1:])
+    else:
+        model_name="unet"
+        model = unet(input_size =train_data.shape[1:])
 
     if  not overwrite:
         prediction_model= load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)

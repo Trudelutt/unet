@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
 from tqdm import tqdm
+from keras.utils import to_categorical
 
 
 
@@ -52,7 +53,6 @@ def remove_slices_with_just_background(image, label):
 def add_neighbour_slides_training_data(image, label):
     image_with_channels = np.zeros((image.shape[0], image.shape[1], image.shape[2], 5))
     zeros_image = np.zeros(image[0].shape)
-    print(image.shape)
     for i in range(image.shape[0]):
         if(i == 0):
             image_with_channels[i][...,0] = zeros_image
@@ -204,6 +204,8 @@ def get_train_data_slices(train_files, tag = "LM"):
     train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
+    if tag == "HV":
+        label_data = to_categorical(label_data,3)[:][...,1]
     label = label_data.reshape((label_data.shape[0], label_data.shape[1], label_data.shape[2], 1))
     return train_data, label
 
@@ -222,19 +224,22 @@ def get_slices(files, tag="LM"):
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     label = label_data.reshape((label_data.shape[0], label_data.shape[1], label_data.shape[2], 1))
+    if tag == "HV":
+        label = to_categorical(label,3)[:][...,1]
     return train_data, label
 
 
 if __name__ == "__main__":
-    train_files, val_files, test_files = get_data_files(data="ca", label="Aorta")
+    train_files, val_files, test_files = get_data_files(data="HV", label="HV")
     #print("#####")
     #print(val_files)
     #print("#####")
     #print(test_files)
     #print("#####")
     #print(train_files)
-    train_data, label_data = get_train_data_slices(train_files[:1], tag ="Aorta")
-    print(train_data)
+    train_data, label_data = get_train_data_slices(train_files[:1], tag ="HV")
+    print(label_data)
+    print(label_data.shape)
     plt.figure()
     plt.imshow(label_data[0][...,0])
     plt.figure()

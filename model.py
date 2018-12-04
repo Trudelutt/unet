@@ -119,7 +119,7 @@ def BVNet(pretrained_weights = None,input_size = (256,256, 5)):
     return model
 
 
-def unet(pretrained_weights=None, input_size=(256, 256, 1), number_of_classes=1, loss_function="binaray_crossentropy"):
+def unet(pretrained_weights=None, input_size=(256, 256, 5), number_of_classes=1):
     inputs = Input(input_size)
 
     c1 = Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
@@ -180,11 +180,11 @@ def unet(pretrained_weights=None, input_size=(256, 256, 1), number_of_classes=1,
     c9 = Conv2D(64, (3, 3), activation='relu',
                 padding='same')(c9)
 
-    outputs = Conv2D(number_of_classes, (1, 1), activation='softmax')(c9)
+    outputs = Conv2D(number_of_classes, (1, 1), activation='sigmoid')(c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
 
-    model.compile(optimizer=SGD(lr=10e-5), loss=dsc_loss, metrics=[binary_accuracy, dsc, recall, precision])
+    model.compile(optimizer=SGD(lr=10e-5, momentum=0.9, decay=0.02), loss=dice_coefficient_loss, metrics=[binary_accuracy, dice_coefficient, recall, precision])
     model.summary()
     return model
 
