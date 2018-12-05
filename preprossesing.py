@@ -273,7 +273,7 @@ def get_train_data_slices(train_files, tag = "LM"):
         count_slices += resized_image.shape[0]
         traindata.append(resized_image)
         labeldata.append(resized_label)
-        train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
+    train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     if tag == "HV":
