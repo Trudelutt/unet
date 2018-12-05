@@ -265,16 +265,16 @@ def get_train_data_slices(train_files, tag = "LM"):
     labeldata = []
     count_slices = 0
     for element in train_files:
-        if(element[0] == "../st.Olav/CT_FFR_9/CT_FFR_9_Segmentation/CT_FFR_9_Segmentation_0000/CT_FFR_9_Segmentation_0000_CCTA.nii.gz"):
-            print(element[0])
-            numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1], tag)
-            i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
-            resized_image, resized_label = remove_slices_with_just_background(i, l)
+        #if(element[0] == "../st.Olav/CT_FFR_9/CT_FFR_9_Segmentation/CT_FFR_9_Segmentation_0000/CT_FFR_9_Segmentation_0000_CCTA.nii.gz"):
+        print(element[0])
+        numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1], tag)
+        i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
+        resized_image, resized_label = remove_slices_with_just_background(i, l)
 
-            count_slices += resized_image.shape[0]
-            traindata.append(resized_image)
-            labeldata.append(resized_label)
-            train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
+        count_slices += resized_image.shape[0]
+        traindata.append(resized_image)
+        labeldata.append(resized_label)
+        train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     if tag == "HV":
