@@ -7,6 +7,7 @@ from glob import glob
 from tqdm import tqdm
 from keras.utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
+from skimage.transform import resize
 
 
 
@@ -25,31 +26,107 @@ def split_train_val_test(files):
 
 #TODO check if any information is lost here
 def preprosses_images(image, label, tag):
+    #image = resize(image, (image.shape[0], 256, 256))
     image -= np.min(image)
     image = image/ np.max(image)
     image -= np.mean(image)
     image = image / np.std(image)
-    test = label[:,128:-128,200:-56]
+    #label = resize(label, (label.shape[0],256, 256))
+    print(np.unique(label))
+
     if tag == "HV":
-        print(image[:,128:-128,200:-56].shape)
+        print(image[:,:-128,200:-56].shape)
         return image[:,128:-128,200:-56], label[:,128:-128,200:-56]
-    elif tag == "RCA" or tag == "Aorta":
-        return image[:,128:-128,100:-156], label[:,128:-128,100:-156]
     else:
-        return image[:,128:-128,128:-128], label[:,128:-128,128:-128]
+        return image[:,100:-156, 80:-176], label[:,100:-156, 80:-176]
+    """elif tag == "Aorta":
+        return image[:], label[:]
+    else:
+        return image[:,128:-128,128:-128], label[:,128:-128,128:-128]"""
+
+
+def resample_img(itk_image, out_spacing=[2.0, 2.0, 2.0], is_label=False):
+
+    # The image we will resample (a grid).
+    """grid_image = sitk.GridSource(outputPixelType=sitk.sitkUInt16, size=(512,512),
+                                 sigma=(0.1,0.1), gridSpacing=(20.0,20.0))
+    sitk.Show(grid_image, "original grid image")"""
+
+    # The spatial definition of the images we want to use in a deep learning framework (smaller than the original).
+    #new_size = [256, 256, itk_image.GetDepth()]
+    #reference_image = sitk.Image(new_size, itk_image.GetPixelIDValue())
+    #reference_image.SetOrigin(itk_image.GetOrigin())
+    #reference_image.SetDirection(itk_image.GetDirection())
+    #resample.SetSpacing([sz*spc/nsz for nsz,sz,spc in zip(new_size, grid_image.GetSize(), grid_image.GetSpacing())])
+
+    # Resample without any smoothing.
+    #sitk.Show(sitk.Resample(grid_image, reference_image) , "resampled without smoothing")
+
+    # Resample after Gaussian smoothing.
+    #sitk.Show(sitk.Resample(sitk.SmoothingRecursiveGaussian(grid_image, 2.0), reference_image), "resampled with smoothing")
+
+    # Resample images to 2mm spacing with SimpleITK
+    original_spacing = itk_image.GetSpacing()
+    original_size = itk_image.GetSize()
+
+    """out_size = [
+        int(np.round(original_size[0] * (original_spacing[0] / out_spacing[0]))),
+        int(np.round(original_size[1] * (original_spacing[1] / out_spacing[1]))),
+        int(np.round(original_size[2] * (original_spacing[2] / out_spacing[2])))]"""
+    out_size = [ 256, 256, itk_image.GetDepth()]
+
+    resample = sitk.ResampleImageFilter()
+    #resample.SetOutputSpacing(original_spacing)
+    resample.SetSize(out_size)
+    resample.SetOutputDirection(itk_image.GetDirection())
+    resample.SetOutputOrigin(itk_image.GetOrigin())
+    resample.SetTransform(sitk.Transform())
+    resample.SetDefaultPixelValue(itk_image.GetPixelIDValue())
+    resample.SetOutputSpacing([1, 1, 1])
+
+    if is_label:
+        resample.SetInterpolator(sitk.sitkNearestNeighbor)
+    else:
+        resample.SetInterpolator(sitk.sitkBSpline)
+
+    return resample.Execute(itk_image)
+
+def get_preprossed_numpy_arrays_from_file(image_path, label_path, tag):
+    sitk_image  = sitk.ReadImage(image_path)
+    sitk_label  = sitk.ReadImage(label_path)
+    numpy_image = sitk.GetArrayFromImage(sitk_image)
+    numpy_label = sitk.GetArrayFromImage(sitk_label)
+    #print("NUmpy hsape " + str(numpy_image.shape))
+
+    return preprosses_images(numpy_image, numpy_label, tag)
 
 def remove_slices_with_just_background(image, label):
     first_non_backgroud_slice = float('inf')
     last_non_backgroud_slice = -1
     image_list = []
     label_list = []
+    #print(image.shape)
     for i in range(image.shape[0]):
+        #print(np.unique(label[i]), i)
+        #print(label[i].shape)
         if(1 in label[i]):
+            #print(i)
             if(i < first_non_backgroud_slice):
                 first_non_backgroud_slice = i
             last_non_backgroud_slice = i
-    resize_label =  label[first_non_backgroud_slice:last_non_backgroud_slice + 1]
-    resize_image =  image[first_non_backgroud_slice:last_non_backgroud_slice+1]
+    #print(first_non_backgroud_slice-2, last_non_backgroud_slice)
+    if(first_non_backgroud_slice-2 < 0):
+        resize_label =  label[first_non_backgroud_slice-1:last_non_backgroud_slice + 1]
+        resize_image =  image[first_non_backgroud_slice-1:last_non_backgroud_slice+1]
+    elif(first_non_backgroud_slice-1 < 0):
+        resize_label =  label[first_non_backgroud_slice:last_non_backgroud_slice + 1]
+        resize_image =  image[first_non_backgroud_slice:last_non_backgroud_slice+1]
+    else:
+        resize_label =  label[first_non_backgroud_slice-2:last_non_backgroud_slice + 1]
+        resize_image =  image[first_non_backgroud_slice-2:last_non_backgroud_slice+1]
+
+    #print(resize_label.shape)
+    #print(np.unique(resize_label[0]))
     return resize_image, resize_label
 
 
@@ -132,12 +209,6 @@ def fetch_training_data_ca_files(label="LM"):
     return training_data_files
 
 
-def get_preprossed_numpy_arrays_from_file(image_path, label_path, tag):
-    sitk_image  = sitk.ReadImage(image_path)
-    sitk_label  = sitk.ReadImage(label_path)
-    return preprosses_images(sitk.GetArrayFromImage(sitk_image), sitk.GetArrayFromImage(sitk_label), tag)
-
-
 def get_train_and_label_numpy(number_of_slices, train_list, label_list):
     train_data = np.zeros((number_of_slices, train_list[0].shape[1], train_list[0].shape[2], 5))
     label_data = np.zeros((number_of_slices, label_list[0].shape[1], label_list[0].shape[2]))
@@ -194,15 +265,16 @@ def get_train_data_slices(train_files, tag = "LM"):
     labeldata = []
     count_slices = 0
     for element in train_files:
-        print(element[0])
-        numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1], tag)
-        i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
-        resized_image, resized_label = remove_slices_with_just_background(i, l)
+        if(element[0] == "../st.Olav/CT_FFR_9/CT_FFR_9_Segmentation/CT_FFR_9_Segmentation_0000/CT_FFR_9_Segmentation_0000_CCTA.nii.gz"):
+            print(element[0])
+            numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1], tag)
+            i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
+            resized_image, resized_label = remove_slices_with_just_background(i, l)
 
-        count_slices += resized_image.shape[0]
-        traindata.append(resized_image)
-        labeldata.append(resized_label)
-train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
+            count_slices += resized_image.shape[0]
+            traindata.append(resized_image)
+            labeldata.append(resized_label)
+            train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     if tag == "HV":
@@ -273,26 +345,26 @@ def data_augumentation(train_x, train_y):
 
 
 if __name__ == "__main__":
-    train_files, val_files, test_files = get_data_files(data="ca", label="LM")
+    train_files, val_files, test_files = get_data_files(data="ca", label="Aorta")
     #print("#####")
     #print(val_files)
     #print("#####")
     #print(test_files)
     #print("#####")
     #print(train_files)
-    train_data, label_data = get_train_data_slices(train_files, tag ="LM")
+    train_data, label_data = get_train_data_slices(train_files, tag ="Aorta")
     sitk_image = sitk.GetImageFromArray(label_data)
     sitk.WriteImage(sitk_image, "test_gt_rca.nii.gz")
 
-    """data_augumentation(train_data, label_data)
+    #data_augumentation(train_data, label_data)
     print(label_data)
     print(label_data.shape)
     plt.figure()
-    plt.imshow(label_data[0][...,0])
+    plt.imshow(train_data[0][...,0], cmap="gray")
     plt.figure()
-    plt.imshow(label_data[-1][...,0])
+    plt.imshow(train_data[-1][...,0], cmap="gray")
     plt.figure()
-    plt.imshow(label_data[label_data.shape[0]//2][...,0])
-    plt.show()"""
+    plt.imshow(train_data[label_data.shape[0]//2][...,0], cmap="gray")
+    plt.show()
     #write_all_labels("../st.Olav/CT_FFR_3/CT_FFR_3_Segmentation/CT_FFR_3_Segmentation_0000/CT_FFR_3_Segmentation_0000_")
     #write_pridiction_to_file(train_data[...,2], label_data)
