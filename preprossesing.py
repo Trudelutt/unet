@@ -11,17 +11,16 @@ from skimage.transform import resize
 
 
 
-def split_train_val_test(files):
-    n_files = len(files)
-    number_test = n_files//((n_files - int(n_files*0.8))//2)
+def split_train_val_test(samples):
+    n_samples = len(samples)
+    sep_train = int(n_samples*0.8)
+    sep_val = int(n_samples*0.9)
 
-    val_files = files[::number_test]
-    test_files = files[1::number_test]
-    train_files = [x for x in files if x not in val_files and x not in test_files]
-    print(n_files, len(train_files), len(val_files), len(test_files))
-    if(bool(set(val_files) & set(test_files) & set(train_files))):
-        print("THEY have some element in common")
+    train_files = samples[:sep_train]
+    val_files = samples[sep_train:sep_val]
 
+    test_files = samples[sep_val:]
+    print(len(train_files), len(val_files), len(test_files))
     return train_files, val_files, test_files
 
 #TODO check if any information is lost here
@@ -265,7 +264,7 @@ def get_train_data_slices(train_files, tag = "LM"):
     labeldata = []
     count_slices = 0
     for element in train_files:
-        #if(element[0] == "../st.Olav/CT_FFR_9/CT_FFR_9_Segmentation/CT_FFR_9_Segmentation_0000/CT_FFR_9_Segmentation_0000_CCTA.nii.gz"):
+        #if(element[0] == "../st.Olav/CT_FFR_Pilot_7/CT_FFR_Pilot_7_Segmentation/CT_FFR_Pilot_7_Segmentation_0000/CT_FFR_Pilot_7_Segmentation_0000_CCTA.nii.gz"):
         print(element[0])
         numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1], tag)
         i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
@@ -346,25 +345,30 @@ def data_augumentation(train_x, train_y):
 
 if __name__ == "__main__":
     train_files, val_files, test_files = get_data_files(data="ca", label="Aorta")
-    #print("#####")
-    #print(val_files)
-    #print("#####")
-    #print(test_files)
-    #print("#####")
-    #print(train_files)
     train_data, label_data = get_train_data_slices(train_files, tag ="Aorta")
     sitk_image = sitk.GetImageFromArray(label_data)
-    sitk.WriteImage(sitk_image, "test_gt_rca.nii.gz")
+    sitk.WriteImage(sitk_image, "test_gt_Aorta.nii.gz")
+
+
+    train_files, val_files, test_files = get_data_files(data="ca", label="RCA")
+    train_data, label_data = get_train_data_slices(train_files, tag ="RCA")
+    sitk_image = sitk.GetImageFromArray(label_data)
+    sitk.WriteImage(sitk_image, "test_gt_RCA.nii.gz")
+
+    train_files, val_files, test_files = get_data_files(data="ca", label="LM")
+    train_data, label_data = get_train_data_slices(train_files, tag ="LM")
+    sitk_image = sitk.GetImageFromArray(label_data)
+    sitk.WriteImage(sitk_image, "test_gt_LM.nii.gz")
 
     #data_augumentation(train_data, label_data)
     print(label_data)
     print(label_data.shape)
-    plt.figure()
+    """plt.figure()
     plt.imshow(train_data[0][...,0], cmap="gray")
     plt.figure()
     plt.imshow(train_data[-1][...,0], cmap="gray")
     plt.figure()
     plt.imshow(train_data[label_data.shape[0]//2][...,0], cmap="gray")
-    plt.show()
+    plt.show()"""
     #write_all_labels("../st.Olav/CT_FFR_3/CT_FFR_3_Segmentation/CT_FFR_3_Segmentation_0000/CT_FFR_3_Segmentation_0000_")
     #write_pridiction_to_file(train_data[...,2], label_data)
