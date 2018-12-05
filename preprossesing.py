@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from glob import glob
 from tqdm import tqdm
 from keras.utils import to_categorical
+from keras.preprocessing.image import ImageDataGenerator
 
 
 
@@ -32,6 +33,8 @@ def preprosses_images(image, label, tag):
     if tag == "HV":
         print(image[:,128:-128,200:-56].shape)
         return image[:,128:-128,200:-56], label[:,128:-128,200:-56]
+    elif tag == "RCA" or tag == "Aorta":
+        return image[:,128:-128,100:-156], label[:,128:-128,100:-156]
     else:
         return image[:,128:-128,128:-128], label[:,128:-128,128:-128]
 
@@ -85,8 +88,6 @@ def add_neighbour_slides_training_data(image, label):
             image_with_channels[i][...,3] = image[i+1]
             image_with_channels[i][...,4] = image[i+2]
     return image_with_channels, label
-
-
 
 
     #TODO check if channels becomes right for training 0. 1. and the last ones
@@ -154,7 +155,7 @@ def get_train_and_label_numpy(number_of_slices, train_list, label_list):
 
 def read_numpyarray_from_file(path):
     image = sitk.ReadImage(path)
-    return sitk.GetArrayFromImage(image)
+    return sitk.GetArrayFromImage(image).astype('float32')
 
 def show_nii_image(path, slice_nr):
     image = read_numpyarray_from_file(path)
@@ -201,7 +202,7 @@ def get_train_data_slices(train_files, tag = "LM"):
         count_slices += resized_image.shape[0]
         traindata.append(resized_image)
         labeldata.append(resized_label)
-    train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
+train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
     if tag == "HV":
@@ -229,15 +230,61 @@ def get_slices(files, tag="LM"):
     return train_data, label
 
 
+def write_all_labels(path):
+    image = read_numpyarray_from_file(path+"LM.nii.gz")
+    image += read_numpyarray_from_file(path+"Aorta.nii.gz")
+    image += read_numpyarray_from_file(path+ "RCA.nii.gz")
+    image[image == 2] = 1
+    sitk_image = sitk.GetImageFromArray(image)
+    sitk.WriteImage(sitk_image, "all_labels.nii.gz")
+
+def data_augumentation(train_x, train_y):
+    data_gen_args = dict( zoom_range=0.1)
+    train_x1_datagen = ImageDataGenerator(**data_gen_args)
+    train_x2_datagen = ImageDataGenerator(**data_gen_args)
+    train_x3_datagen = ImageDataGenerator(**data_gen_args)
+    train_x4_datagen = ImageDataGenerator(**data_gen_args)
+    train_x5_datagen = ImageDataGenerator(**data_gen_args)
+    train_y_datagen = ImageDataGenerator(**data_gen_args)
+    seed = 1
+    train_x1_augmented = train_x1_datagen.flow(train_x[...,0:1], batch_size=1, shuffle=False, seed=seed)
+    #train_x2_augmented = train_x1_datagen.flow(train_x[...,1:2], batch_size=1, shuffle=False, seed=seed)
+    #train_x3_augmented = train_x1_datagen.flow(train_x[...,2:3], batch_size=1, shuffle=False, seed=seed)
+    #train_x4_augmented = train_x1_datagen.flow(train_x[...,3:4], batch_size=1, shuffle=False, seed=seed)
+    #train_x5_augmented = train_x1_datagen.flow(train_x[...,4:], batch_size=1, shuffle=False, seed=seed)
+
+    #train_y_augmented = train_y_datagen.flow(train_y, batch_size=1, shuffle=False, seed=seed)
+
+    train_x1_augument_numpy = np.array([element for element in train_x1_augmented])
+    #train_x2_augument_numpy = np.array([element for element in train_x2_augmented])
+    #train_x3_augument_numpy = np.array([element for element in train_x3_augmented])
+    #train_x4_augument_numpy = np.array([element for element in train_x4_augmented])
+    #train_x5_augument_numpy = np.array([element for element in train_x5_augmented])
+
+    train_x_augument_numpy = np.zeros((train_x1_augument_numpy.shape[0], train_x1_augument_numpy.shape[1], train_x1_augument_numpy.shape[2], 5))
+    train_x_augument_numpy[...,0] = train_x1_augument_numpy
+    #train_x_augument_numpy[...,1] = train_x2_augument_numpy
+    #train_x_augument_numpy[...,2] = train_x3_augument_numpy
+    #train_x_augument_numpy[...,3] = train_x4_augument_numpy
+    #train_x_augument_numpy[...,4] = train_x5_augument_numpy
+    #train_y_augument_numpy = np.array([element for element in train_y_augmented])
+    print(train_x, train_x_augument_numpy)
+
+
+
 if __name__ == "__main__":
-    train_files, val_files, test_files = get_data_files(data="HV", label="HV")
+    train_files, val_files, test_files = get_data_files(data="ca", label="LM")
     #print("#####")
     #print(val_files)
     #print("#####")
     #print(test_files)
     #print("#####")
     #print(train_files)
-    train_data, label_data = get_train_data_slices(train_files[:1], tag ="HV")
+    train_data, label_data = get_train_data_slices(train_files, tag ="LM")
+    sitk_image = sitk.GetImageFromArray(label_data)
+    sitk.WriteImage(sitk_image, "test_gt_rca.nii.gz")
+
+    """data_augumentation(train_data, label_data)
     print(label_data)
     print(label_data.shape)
     plt.figure()
@@ -246,5 +293,6 @@ if __name__ == "__main__":
     plt.imshow(label_data[-1][...,0])
     plt.figure()
     plt.imshow(label_data[label_data.shape[0]//2][...,0])
-    plt.show()
+    plt.show()"""
+    #write_all_labels("../st.Olav/CT_FFR_3/CT_FFR_3_Segmentation/CT_FFR_3_Segmentation_0000/CT_FFR_3_Segmentation_0000_")
     #write_pridiction_to_file(train_data[...,2], label_data)
