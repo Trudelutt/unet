@@ -17,7 +17,7 @@ from dice_coefficient_loss import dice_coefficient_loss, dice_coefficient
 def gpu_config():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth=True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.4
+    config.gpu_options.per_process_gpu_memory_fraction = 0.9
     #set_session(tf.Session(config = config))
     sess = tf.Session(config=config)
     sess.run(tf.global_variables_initializer())
@@ -33,10 +33,10 @@ def train_model(model, input, target, val_x, val_y, modelpath):
         json.dump(history.history, f)
         print("Saved history....")
 
-def predict_model(model, input, target, name='LM_01', label="LM"):
+def predict_model(model, input, target, name='LM_01', label="LM", label_path=None):
     print("Starting predictions")
     p = model.predict(input,  batch_size=1, verbose=1)
-    write_pridiction_to_file(target,p, path="./predictions/" +label + "/" + name + "prediction.nii.gz")
+    write_pridiction_to_file(target, p, label, path="./predictions/" +label + "/" + name + "prediction.nii.gz", label_path=label_path)
 
 
 def evaluation(model, test_files, label):
@@ -48,7 +48,7 @@ def evaluation(model, test_files, label):
 
 
 if __name__ == "__main__":
-    overwrite = True
+    overwrite = False
     gpu_config()
     model_name = "BVNet"
     #Hepatic Vessel has label HV
@@ -58,23 +58,22 @@ if __name__ == "__main__":
     'precision':precision, 'dice_coefficient': dice_coefficient, 'dice_coefficient_loss': dice_coefficient_loss}
 
     train_files, val_files, test_files = get_data_files(data="HV", label=label)
-    train_data, label_data = get_train_data_slices(train_files, tag=label)
-    print("Done geting training slices...")
-    val_data, val_label = get_slices(val_files, label)
-    print("Done geting validation slices...")
-
-    if model_name == "BVNet":
-        model = BVNet(input_size =train_data.shape[1:])
-    else:
-        model_name="unet"
-        model = unet(input_size =train_data.shape[1:])
-
     if  not overwrite:
         prediction_model= load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     else:
+        train_data, label_data = get_train_data_slices(train_files, tag=label)
+        print("Done geting training slices...")
+        val_data, val_label = get_slices(val_files, label)
+        print("Done geting validation slices...")
+
+        if model_name == "BVNet":
+            model = BVNet(input_size =train_data.shape[1:])
+        else:
+            model_name="unet"
+            model = unet(input_size =train_data.shape[1:])
         train_model(model, train_data, label_data, val_data, val_label, modelpath=modelpath)
         prediction_model = load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     for i in range(len(test_files)):
         pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i, tag=label)
-        predict_model(prediction_model, pred_sample, pred_label, name=modelpath+"_"+str(i)+"_", label=label)
+        predict_model(prediction_model, pred_sample, pred_label, name=modelpath+"_"+str(i)+"_", label=label, label_path=test_files[i][1])
     evaluation(prediction_model, test_files, label)

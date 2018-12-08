@@ -8,6 +8,7 @@ from tqdm import tqdm
 from keras.utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
 from skimage.transform import resize
+import nibabel as nib
 
 
 
@@ -32,8 +33,8 @@ def preprosses_images(image, label, tag):
 
     if tag == "HV":
         label[label == 2] = 0
-        print("Removing tumor mask")
-        print(np.unique(label))
+        #print("Removing tumor mask")
+        #print(np.unique(label))
         return image[:,128:-128,200:-56], label[:,128:-128,200:-56]
     else:
         return image[:,100:-156, 80:-176], label[:,100:-156, 80:-176]
@@ -43,36 +44,8 @@ def preprosses_images(image, label, tag):
 def get_preprossed_numpy_arrays_from_file(image_path, label_path, tag):
     sitk_image  = sitk.ReadImage(image_path)
     sitk_label  = sitk.ReadImage(label_path )
-    #print(sitk_label.GetSize())
-    #print(sitk_label.GetPixelIDTypeAsString())
     numpy_image = sitk.GetArrayFromImage(sitk_image)
     numpy_label = sitk.GetArrayFromImage(sitk_label)
-    #print(numpy_label.dtype)
-    #test_sitk_image = sitk.GetImageFromArray(numpy_label, isVector=False)
-    #print(test_sitk_image.GetSize())
-    #print(test_sitk_image.GetPixelIDTypeAsString())
-    #if(sitk_label == test_sitk_image):
-        #print("HURRA!!<3")
-    #print(test_sitk_image.GetDepth(), test_sitk_image.GetWidth(), test_sitk_image.GetHeight())
-    #sitk.WriteImage(test_sitk_image,  "kvaskjer_HV.nii.gz")
-
-    """reader = sitk.ImageFileReader()
-    #reader.SetImageIO("BMPImageIO")
-    reader.SetFileName(label_path)
-    test_sitk_label = reader.Execute();
-
-    test_label_numpy = sitk.GetArrayFromImage(test_sitk_label)
-    test_label = sitk.GetImageFromArray(test_label_numpy)
-    writer = sitk.ImageFileWriter()
-    writer.SetFileName( "kvaskjer1_HV.nii.gz")
-    writer.Execute(test_label)"""
-    #print(numpy_label.dtype)
-    #print(sitk_label.GetDepth(), sitk_label.GetWidth(), sitk_label.GetHeight())
-    #print(numpy_label.shape)
-
-    #test_sitk_image = sitk.GetImageFromArray(numpy_label)
-    #sitk.WriteImage(test_sitk_image,  "kvaskjer_HV.mha")
-
     return preprosses_images(numpy_image, numpy_label, tag)
 
 def remove_slices_with_just_background(image, label):
@@ -209,11 +182,25 @@ def get_prediced_image_of_test_files(files, number, tag):
     return get_slices(files[number:number+1], tag)
 
 
-def write_pridiction_to_file(image_array, prediction_array, path="./predictions/prediction.nii.gz"):
+def write_pridiction_to_file(label_array, prediction_array, tag, path="./predictions/prediction.nii.gz", label_path=None):
+    meta_sitk = sitk.ReadImage(label_path)
+    print("INSIDE write prediction!!!")
     print(prediction_array.shape)
-    sitk_image = sitk.GetImageFromArray(image_array)
+    original_origin = meta_sitk.GetOrigin()
+    if tag =="HV":
+        new_origin =[original_origin[0], original_origin[1]+128, original_origin[2]+200]
+    else:
+        new_origin =[original_origin[0], original_origin[1]+100, original_origin[2]+80]
+    sitk_image = sitk.GetImageFromArray(label_array)
+    sitk_image.SetOrigin(new_origin)
+    sitk_image.SetSpacing(meta_sitk.GetSpacing())
+    sitk_image.SetDirection(meta_sitk.GetDirection())
     sitk.WriteImage(sitk_image, path.replace("prediction.nii", "gt.nii"))
+
     predsitk_image = sitk.GetImageFromArray(prediction_array)
+    predsitk_image.SetOrigin(new_origin)
+    predsitk_image.SetSpacing(meta_sitk.GetSpacing())
+    predsitk_image.SetDirection(meta_sitk.GetDirection())
     sitk.WriteImage(predsitk_image, path)
     print("Writing prediction is done...")
 
@@ -283,34 +270,6 @@ if __name__ == "__main__":
     #for i in range(len(train_files)):
     n= len(test_files)
     print(test_files)
-    test_x, test_y = get_prediced_image_of_test_files(test_files, 6, tag="HV")
+    test_x, test_y = get_prediced_image_of_test_files(test_files, 0, tag="HV")
     train_data, label_data = get_train_data_slices(train_files[:1], tag ="HV")
-    sitk_image = sitk.GetImageFromArray(label_data)
-    sitk.WriteImage(sitk_image, "test_gt"+str(7)+ "_HV.nii.gz")
-    """
-    sitk_image_test = sitk.GetImageFromArray(test_y)
-    sitk.WriteImage(sitk_image_test, "pred_test_gt"+str(6)+ "_HV.nii.gz")"""
-
-"""
-    train_files, val_files, test_files = get_data_files(data="ca", label="RCA")
-    train_data, label_data = get_train_data_slices(train_files, tag ="RCA")
-    sitk_image = sitk.GetImageFromArray(label_data)
-    sitk.WriteImage(sitk_image, "test_gt_RCA.nii.gz")
-
-    train_files, val_files, test_files = get_data_files(data="ca", label="LM")
-    train_data, label_data = get_train_data_slices(train_files, tag ="LM")
-    sitk_image = sitk.GetImageFromArray(label_data)
-    sitk.WriteImage(sitk_image, "test_gt_LM.nii.gz")
-
-    #data_augumentation(train_data, label_data)
-    #print(label_data)
-    print(label_data.shape)
-    plt.figure()
-    plt.imshow(train_data[0][...,0], cmap="gray")
-    plt.figure()
-    plt.imshow(train_data[-1][...,0], cmap="gray")
-    plt.figure()
-    plt.imshow(train_data[label_data.shape[0]//2][...,0], cmap="gray")
-    plt.show()"""
-    #write_all_labels("../st.Olav/CT_FFR_3/CT_FFR_3_Segmentation/CT_FFR_3_Segmentation_0000/CT_FFR_3_Segmentation_0000_")
-    #write_pridiction_to_file(train_data[...,2], label_data)
+    write_pridiction_to_file(test_y, label_data, tag="HV", path="./predictions/prediction.nii.gz", label_path=test_files[0][1])
