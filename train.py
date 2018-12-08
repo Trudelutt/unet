@@ -39,8 +39,8 @@ def predict_model(model, input, target, name='LM_01', label="LM"):
     write_pridiction_to_file(target,p, path="./predictions/" +label + "/" + name + "prediction.nii.gz")
 
 
-def evaluation(model, test_files):
-    test_x, test_y = get_slices(test_files)
+def evaluation(model, test_files, label):
+    test_x, test_y = get_slices(test_files, label)
     print("Starting evaluation.....")
     print(model.evaluate(test_x, test_y, batch_size=1, verbose=1))
     print(model.metrics_names)
@@ -52,12 +52,12 @@ if __name__ == "__main__":
     gpu_config()
     model_name = "BVNet"
     #Hepatic Vessel has label HV
-    label = "RCA"
+    label = "HV"
     modelpath = model_name+ "_"+ label
     custom_objects = custom_objects={ 'binary_accuracy':binary_accuracy, 'recall':recall,
     'precision':precision, 'dice_coefficient': dice_coefficient, 'dice_coefficient_loss': dice_coefficient_loss}
 
-    train_files, val_files, test_files = get_data_files(data="ca", label=label)
+    train_files, val_files, test_files = get_data_files(data="HV", label=label)
     train_data, label_data = get_train_data_slices(train_files, tag=label)
     print("Done geting training slices...")
     val_data, val_label = get_slices(val_files)
@@ -75,6 +75,6 @@ if __name__ == "__main__":
         train_model(model, train_data, label_data, val_data, val_label, modelpath=modelpath)
         prediction_model = load_model('./models/' + modelpath +'.hdf5', custom_objects=custom_objects)
     for i in range(len(test_files)):
-        pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i)
+        pred_sample, pred_label = get_prediced_image_of_test_files(test_files, i, tag=label)
         predict_model(prediction_model, pred_sample, pred_label, name=modelpath+"_"+str(i)+"_", label=label)
-    evaluation(prediction_model, test_files)
+    evaluation(prediction_model, test_files, label)
