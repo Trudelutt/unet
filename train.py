@@ -60,7 +60,7 @@ if __name__ == "__main__":
     train_files, val_files, test_files = get_data_files(data="HV", label=label)
     train_data, label_data = get_train_data_slices(train_files, tag=label)
     print("Done geting training slices...")
-    val_data, val_label = get_slices(val_files)
+    val_data, val_label = get_slices(val_files, label)
     print("Done geting validation slices...")
 
     if model_name == "BVNet":

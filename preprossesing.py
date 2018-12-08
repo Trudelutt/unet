@@ -31,7 +31,9 @@ def preprosses_images(image, label, tag):
     image = image / np.std(image)
 
     if tag == "HV":
-        print(image[:,:-128,200:-56].shape)
+        label[label == 2] = 0
+        print("Removing tumor mask")
+        print(np.unique(label))
         return image[:,128:-128,200:-56], label[:,128:-128,200:-56]
     else:
         return image[:,100:-156, 80:-176], label[:,100:-156, 80:-176]
@@ -40,9 +42,36 @@ def preprosses_images(image, label, tag):
 
 def get_preprossed_numpy_arrays_from_file(image_path, label_path, tag):
     sitk_image  = sitk.ReadImage(image_path)
-    sitk_label  = sitk.ReadImage(label_path)
+    sitk_label  = sitk.ReadImage(label_path )
+    #print(sitk_label.GetSize())
+    #print(sitk_label.GetPixelIDTypeAsString())
     numpy_image = sitk.GetArrayFromImage(sitk_image)
     numpy_label = sitk.GetArrayFromImage(sitk_label)
+    #print(numpy_label.dtype)
+    #test_sitk_image = sitk.GetImageFromArray(numpy_label, isVector=False)
+    #print(test_sitk_image.GetSize())
+    #print(test_sitk_image.GetPixelIDTypeAsString())
+    #if(sitk_label == test_sitk_image):
+        #print("HURRA!!<3")
+    #print(test_sitk_image.GetDepth(), test_sitk_image.GetWidth(), test_sitk_image.GetHeight())
+    #sitk.WriteImage(test_sitk_image,  "kvaskjer_HV.nii.gz")
+
+    """reader = sitk.ImageFileReader()
+    #reader.SetImageIO("BMPImageIO")
+    reader.SetFileName(label_path)
+    test_sitk_label = reader.Execute();
+
+    test_label_numpy = sitk.GetArrayFromImage(test_sitk_label)
+    test_label = sitk.GetImageFromArray(test_label_numpy)
+    writer = sitk.ImageFileWriter()
+    writer.SetFileName( "kvaskjer1_HV.nii.gz")
+    writer.Execute(test_label)"""
+    #print(numpy_label.dtype)
+    #print(sitk_label.GetDepth(), sitk_label.GetWidth(), sitk_label.GetHeight())
+    #print(numpy_label.shape)
+
+    #test_sitk_image = sitk.GetImageFromArray(numpy_label)
+    #sitk.WriteImage(test_sitk_image,  "kvaskjer_HV.mha")
 
     return preprosses_images(numpy_image, numpy_label, tag)
 
@@ -217,10 +246,6 @@ def get_train_data_slices(train_files, tag = "LM"):
     train_data, label_data = get_train_and_label_numpy(count_slices, traindata, labeldata)
 
     print("min: " + str(np.min(train_data)) +", max: " + str(np.max(train_data)))
-    if tag == "HV":
-        label_data[label_data == 2] = 0
-        print("Removing tumor mask")
-        print(np.unique(label_data))
     label = label_data.reshape((label_data.shape[0], label_data.shape[1], label_data.shape[2], 1))
     return train_data, label
 
@@ -232,9 +257,6 @@ def get_slices(files, tag="LM"):
     for element in files:
         numpy_image, numpy_label = get_preprossed_numpy_arrays_from_file(element[0], element[1],tag)
         i, l = add_neighbour_slides_training_data(numpy_image, numpy_label)
-        if tag == "HV":
-            l[l == 2] = 0
-            print(np.unique(l))
         count_slices += i.shape[0]
         input_data_list.append(i)
         label_data_list.append(l)
@@ -261,10 +283,13 @@ if __name__ == "__main__":
     #for i in range(len(train_files)):
     n= len(test_files)
     print(test_files)
-    test_x, test_y = get_prediced_image_of_test_files(test_files, 6)
-    train_data, label_data = get_slices(test_files[n-1:n], tag ="HV")
+    test_x, test_y = get_prediced_image_of_test_files(test_files, 6, tag="HV")
+    train_data, label_data = get_train_data_slices(train_files[:1], tag ="HV")
     sitk_image = sitk.GetImageFromArray(label_data)
     sitk.WriteImage(sitk_image, "test_gt"+str(7)+ "_HV.nii.gz")
+    """
+    sitk_image_test = sitk.GetImageFromArray(test_y)
+    sitk.WriteImage(sitk_image_test, "pred_test_gt"+str(6)+ "_HV.nii.gz")"""
 
 """
     train_files, val_files, test_files = get_data_files(data="ca", label="RCA")
