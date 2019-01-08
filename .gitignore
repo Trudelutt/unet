@@ -12,6 +12,11 @@ build/
 develop-eggs/
 dist/
 downloads/
+fig/
+history/
+predictions/
+test/
+models/
 eggs/
 .eggs/
 lib/
